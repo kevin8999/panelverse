@@ -42,3 +42,25 @@ Sixth, download the project requirements.
 ```shell
 pip install -r requirements.txt
 ```
+
+---
+
+To run the app, change into the `my-app/` directory.
+
+```shell
+cd panel-verse/my-app/
+```
+
+Next, run
+
+```shell
+npm install
+```
+
+Then, run
+
+```shell
+npm run dev
+```
+
+The app should now run on `localhost`.
