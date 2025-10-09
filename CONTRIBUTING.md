@@ -24,7 +24,7 @@ python -m venv .venv
 
 Fifth, activate the virtual environment.
 
-- If you are Windows, run
+- If you are on Windows, run
 
 ```shell
 source .venv/Scripts/activate
@@ -40,5 +40,5 @@ source .venv/bin/activate
 Sixth, download the project requirements.
 
 ```shell
-pip install requirements.txt
+pip install -r requirements.txt
 ```
