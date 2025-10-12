@@ -1,15 +1,13 @@
-import React from "react";
-
 export default function Footer() {
   return (
-    <footer className="bg-gray-100 text-gray-600 py-6 mt-10">
-      <div className="max-w-7xl mx-auto px-6 flex justify-between items-center text-sm">
+    <footer className="mt-16 border-t border-slate-200 bg-white/60">
+      <div className="container flex flex-col items-center justify-between gap-2 py-6 text-sm text-slate-500 md:flex-row">
         <p>© {new Date().getFullYear()} PanelVerse. All rights reserved.</p>
         <a
-          href="https://github.com/kevin8999/cen-3031-project"
+          className="font-medium text-indigo-600 hover:underline"
+          href="https://github.com/kevin8999/panel-verse"
           target="_blank"
           rel="noreferrer"
-          className="text-indigo-600 hover:underline"
         >
           View on GitHub
         </a>
