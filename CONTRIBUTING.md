@@ -16,51 +16,18 @@ Third, change into the project directory.
 cd panel-verse/
 ```
 
-Fourth, create a virtual environment.
+Fourth, ensure Docker is installed on your system. Please refer to the following documentation to ensure it is installed on your system.
 
-```shell
-python -m venv .venv
-```
+- [Docker installation on Windows](https://docs.docker.com/desktop/setup/install/windows-install/)
+- [Docker installation on MacOS](https://docs.docker.com/desktop/setup/install/mac-install/)
+- [Docker installation on Linux](https://docs.docker.com/engine/install/)
 
-Fifth, activate the virtual environment.
-
-- If you are on Windows, run
-
-```shell
-source .venv/Scripts/activate
-```
-
-- If you are on MacOS or Linux, run:
-
-
-```shell
-source .venv/bin/activate
-```
-
-Sixth, download the project requirements.
-
-```shell
-pip install -r requirements.txt
-```
+Docker lets you run the app on your device.
 
 ---
 
-To run the app, change into the `my-app/` directory.
+To run the application, run Docker using the following command.
 
 ```shell
-cd panel-verse/my-app/
+docker compose up --build
 ```
-
-Next, run
-
-```shell
-npm install
-```
-
-Then, run
-
-```shell
-npm run dev
-```
-
-The app should now run on `localhost`.
