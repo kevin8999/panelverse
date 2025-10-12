@@ -43,6 +43,16 @@ To run the application, run Docker using the following command.
 docker compose up --build
 ```
 
+In the event that the command above fails to build, run the following commands:
+
+```shell
+docker compose down -v
+docker compose build --no-cache frontend
+docker compose up
+```
+
+The command above will stop containers and delete their attached volumes to ensure a fresh environment the next time the app is run.
+
 ## Frontend (Vite + React + Tailwind v4)
 
 The frontend lives in `my-app/`.
