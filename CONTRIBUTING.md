@@ -2,8 +2,6 @@
 
 Thanks for helping build PanelVerse! This guide explains how to set up the project locally and how we work with branches and pull requests.
 
----
-
 ## Table of Contents
 
 * [Fork & Clone](#fork--clone)
@@ -26,51 +24,30 @@ Thanks for helping build PanelVerse! This guide explains how to set up the proje
 3. (Recommended) Add the upstream remote:
 
    ```bash
-   git remote add upstream https://github.com/kevin8999/panel-verse.git
+   git remote add upstream https://github.com/kevin8999/panel-verse
    ```
+
+4. Ensure Docker is installed on your system. Please refer to the following documentation to ensure it is installed on your system.
+
+- [Docker installation on Windows](https://docs.docker.com/desktop/setup/install/windows-install/)
+- [Docker installation on MacOS](https://docs.docker.com/desktop/setup/install/mac-install/)
+- [Docker installation on Linux](https://docs.docker.com/engine/install/)
+
+Docker lets you run the app on your device.
 
 ---
 
+To run the application, run Docker using the following command.
+
+```shell
+docker compose up --build
+```
+
 ## Frontend (Vite + React + Tailwind v4)
 
-> The frontend lives in `my-app/`.
+The frontend lives in `my-app/`.
 
-1. Install dependencies:
-
-   ```bash
-   cd my-app
-   npm install
-   ```
-
-2. Start the dev server:
-
-   ```bash
-   npm run dev
-   ```
-
-   Vite prints a URL like `http://localhost:5173`.
-   If the port is taken:
-
-   ```bash
-   npm run dev -- --port 5173
-   ```
-
-3. Tailwind v4 is already configured:
-
-   * `postcss.config.cjs`
-
-     ```js
-     module.exports = {
-       plugins: { '@tailwindcss/postcss': {}, autoprefixer: {} },
-     };
-     ```
-   * `src/index.css` (first line)
-
-     ```css
-     @import "tailwindcss/index.css";
-     ```
-
-> **Windows PowerShell note**: if you see “running scripts is disabled”, either use **Command Prompt** or run:
+> [!NOTE] **Windows PowerShell note**: if you see “running scripts is disabled”, either use **Command Prompt** or run:
 >
 > ```powershell
 > Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
@@ -80,37 +57,7 @@ Thanks for helping build PanelVerse! This guide explains how to set up the proje
 
 ## Backend (FastAPI)
 
-> Only needed if you’re working on backend APIs. If you’re frontend-only, you can skip this.
-
-1. From the repo root:
-
-   ```bash
-   python -m venv .venv
-   ```
-2. Activate the venv:
-
-   * **Windows**:
-
-     ```bash
-     .venv\Scripts\activate
-     ```
-   * **macOS/Linux**:
-
-     ```bash
-     source .venv/bin/activate
-     ```
-3. Install backend requirements:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. Run the backend (example):
-
-   ```bash
-   uvicorn app.main:app --reload
-   ```
-
-   The API will be available at `http://localhost:8000` (adjust if different).
+Only needed if you’re working on backend APIs. If you’re frontend-only, you can skip this.
 
 ---
 
@@ -155,20 +102,6 @@ Thanks for helping build PanelVerse! This guide explains how to set up the proje
 
 ## Common Issues
 
-* **Blank/unstyled page**
-  Ensure you’re running from `panel-verse/my-app`:
-
-  ```bash
-  cd panel-verse/my-app
-  npm run dev
-  ```
-
-  And that `src/main.jsx` imports the CSS:
-
-  ```js
-  import './index.css';
-  ```
-
 * **PowerShell blocks npm**
   Use Command Prompt or:
 
@@ -195,7 +128,3 @@ Thanks for helping build PanelVerse! This guide explains how to set up the proje
   ```bash
   npm run dev -- --port 5173
   ```
-
----
-
-##
