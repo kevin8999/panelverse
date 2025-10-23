@@ -2,9 +2,11 @@ version: "3.9"
 
 services:
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: comics-backend
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    command: ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
     volumes:
       - ./backend:/app
     ports:
@@ -17,18 +19,15 @@ services:
       - comics-net
 
   frontend:
-    build: ./frontend
-    container_name: comics-frontend
-    command: npm run dev -- --host
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
     ports:
       - "5173:5173"
-    depends_on:
-      - backend
-    networks:
-      - comics-net
 
   mongo:
     image: mongo:7

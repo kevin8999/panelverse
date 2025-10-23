@@ -1,4 +1,3 @@
-import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import ComicCard from "../components/ComicCard";
 
@@ -14,7 +13,6 @@ const mock = [
 export default function Home() {
   return (
     <div className="min-h-screen">
-      <Navbar />
 
       {/* hero */}
       <section className="relative border-b border-slate-200 bg-gradient-to-b from-white to-slate-50">
