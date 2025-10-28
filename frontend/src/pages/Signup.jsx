@@ -9,20 +9,29 @@ function Signup() {
         formState: { errors },
     } = useForm();
 
-    const onSubmit = (data) => {
-        const existingUser = JSON.parse(localStorage.getItem(data.email));
-        if (existingUser) {
-            console.log("Email is already registered!");
-        } else {
-            const userData = {
-                name: data.name,
-                email: data.email,
-                password: data.password,
-            };
-            localStorage.setItem(data.email, JSON.stringify(userData));
-            console.log(data.name + " has been successfully registered");
+    const onSubmit = async (data) => {
+        try {
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/signup`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+    
+          if (!response.ok) {
+            const error = await response.json();
+            alert("Error: " + error.detail);
+            return;
+          }
+          else {
+            console.log("Successfully registered!");
+          }
+    
+          const result = await response.json();
+          alert(result.message);
+        } catch (err) {
+          console.error("Registration failed:", err);
         }
-    };
+      };
 
     return (
         <>
