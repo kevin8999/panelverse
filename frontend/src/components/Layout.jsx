@@ -15,7 +15,7 @@ function Layout() {
         <Link to="/upload">Upload</Link>
         <Link to="/profile">Profile</Link>
         <Link to="/login">Login</Link>
-        <Link to="/register">Register</Link>
+        <Link to="/signup">Signup</Link>
       </nav>
 
       <main style={{ padding: "20px" }}>

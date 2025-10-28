@@ -1,27 +1,60 @@
-from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, EmailStr
+from passlib.context import CryptContext
 from motor.motor_asyncio import AsyncIOMotorClient
-from os import getenv
+from dotenv import load_dotenv
+import os
 
 from models.user import User, add_user, delete_user, get_user_by_id
 
+from fastapi.middleware.cors import CORSMiddleware
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup: create MongoDB client and connect
-    app.mongodb_client = AsyncIOMotorClient(getenv("MONGO_URL", "mongodb://mongo:27017"))
-    app.mongodb = app.mongodb_client.comicsdb
-    yield
+load_dotenv()
 
-    # Shutdown: close MongoDB connection
-    app.mongodb_client.close()
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+DB_NAME = os.getenv("DB_NAME", "userdb")
 
-app = FastAPI(lifespan=lifespan)
+# Initialize
+app = FastAPI()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+client = AsyncIOMotorClient(MONGO_URI)
+db = client[DB_NAME]
+
+# CORS. Lets react talk to server
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=True,
+)
+
+class User(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+
+@app.post("/api/signup")
+async def signup(user: User):
+    existing_user = await db.users.find_one({"email": user.email})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    #hashed_pw = pwd_context.hash(user.password[:72])
+    await db.users.insert_one({
+        "name": user.name,
+        "email": user.email,
+        "password": user.password,
+        "id": 0
+    })
+
+    return {"message": f"{user.name} successfully registered"}
 
 # simple homepage endpoint
 @app.get("/")
 async def homepage():
-    return {"message" : "hello world"}
+    return {"status" : "ok"}
 
 # check MongoDB connection through fastAPI endpoint
 @app.get("/health/db")
