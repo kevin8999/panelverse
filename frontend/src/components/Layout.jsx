@@ -18,7 +18,7 @@ function Layout() {
         <Link to="/signup">Signup</Link>
       </nav>
 
-      <main style={{ padding: "20px" }}>
+      <main style={{ width: "100%", boxSizing: "border-box" }}>
         <Outlet />
       </main>
     </>
