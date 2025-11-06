@@ -1,7 +1,6 @@
 import { Routes, Route } from "react-router-dom";
-import Layout from "./components/Layout";
+import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
-import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Browse from "./pages/Browse";
 import Upload from "./pages/Upload";
@@ -11,7 +10,7 @@ import Signup from "./pages/Signup";
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Layout />}>
+      <Route path="/" element={<Navbar />}>
         <Route index element={<Home />} />
         <Route path="browse" element={<Browse />} />
         <Route path="upload" element={<Upload />} />

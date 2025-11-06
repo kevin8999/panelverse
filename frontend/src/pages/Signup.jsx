@@ -12,8 +12,10 @@ export default function Signup() {
 
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [role, setRole] = useState("");
 
   const onSubmit = async (data) => {
+    data.role = role; // include role in submission
     try {
       setLoading(true);
       setServerError("");
@@ -116,6 +118,44 @@ export default function Signup() {
               </p>
             )}
           </div>
+
+         {/* Role selection */}
+         <div className="pt-2">
+           <p className="text-sm font-medium mb-2 text-center text-slate-300">
+             I am a...
+           </p>
+           <div className="flex justify-center gap-4">
+             <button
+               type="button"
+               onClick={() => setRole("artist")}
+               className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                 role === "artist"
+                   ? "bg-indigo-600 border-indigo-500 text-white"
+                   : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+               }`}
+             >
+               Artist
+             </button>
+ 
+             <button
+               type="button"
+               onClick={() => setRole("viewer")}
+               className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                 role === "viewer"
+                   ? "bg-indigo-600 border-indigo-500 text-white"
+                   : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+               }`}
+             >
+               Viewer
+             </button>
+           </div>
+ 
+           {!role && (
+             <p className="mt-1 text-xs text-center text-red-400">
+               Please select your role.
+             </p>
+           )}
+         </div>     
 
           {/* Submit */}
           <button
