@@ -69,7 +69,7 @@ export default function Login() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium mb-1" htmlFor="email">
+            <label style={{ textAlign: "left" }} className="block text-sm font-medium mb-1" htmlFor="email">
               Email
             </label>
             <input
@@ -89,6 +89,7 @@ export default function Login() {
           {/* Password */}
           <div>
             <label
+              style={{ textAlign: "left" }}
               className="block text-sm font-medium mb-1"
               htmlFor="password"
             >
