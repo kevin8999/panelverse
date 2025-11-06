@@ -8,7 +8,8 @@ function Layout() {
             gap: "1rem",
             justifyContent: "flex-end",
             borderBottom: "1px solid #ccc",
-            padding: "1rem"
+            padding: "1rem",
+            paddingRight: "3em"
         }}>
         <Link to="/">Home</Link>
         <Link to="/browse">Browse</Link>
