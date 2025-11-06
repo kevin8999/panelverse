@@ -1,70 +1,141 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Link } from "react-router-dom";
 import "../App.css";
 
-function Signup() {
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-    } = useForm();
+export default function Signup() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
 
-    const onSubmit = async (data) => {
-        try {
-          const API_URL = import.meta.env.VITE_API_URL;
-          
-          const response = await fetch(`${API_URL}/api/signup`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-          });
-    
-          if (!response.ok) {
-            const error = await response.json();
-            alert("Error: " + error.detail);
-            return;
-          }
-          else {
-            console.log("Successfully registered!");
-          }
-    
-          const result = await response.json();
-          alert(result.message);
-        } catch (err) {
-          console.error("Registration failed:", err);
-        }
-      };
+  const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState("");
 
-    return (
-        <>
-            <h2>Registration Form</h2>
+  const onSubmit = async (data) => {
+    try {
+      setLoading(true);
+      setServerError("");
 
-            <form className="App" onSubmit={handleSubmit(onSubmit)}>
-                <input
-                    type="text"
-                    {...register("name", { required: true })}
-                    placeholder="Name"
-                />
-                {errors.name && <span style={{ color: "red" }}>*Name* is mandatory</span>}
+      const API_URL = import.meta.env.VITE_API_URL;
 
-                <input
-                    type="email"
-                    {...register("email", { required: true })}
-                    placeholder="Email"
-                />
-                {errors.email && <span style={{ color: "red" }}>*Email* is mandatory</span>}
+      const response = await fetch(`${API_URL}/api/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
 
-                <input
-                    type="password"
-                    {...register("password", { required: true })}
-                    placeholder="Password"
-                />
-                {errors.password && <span style={{ color: "red" }}>*Password* is mandatory</span>}
+      const body = await response.json().catch(() => ({}));
 
-                <input type="submit" style={{ backgroundColor: "#a1eafb" }} />
-            </form>
-        </>
-    );
+      if (!response.ok) {
+        const msg = body.detail || body.message || "Signup failed";
+        setServerError(msg);
+        return;
+      }
+
+      console.log("Successfully registered!");
+      alert(body.message || "Registration successful!");
+    } catch (err) {
+      console.error("Registration failed:", err);
+      setServerError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100 px-4">
+      <div className="w-full max-w-md rounded-2xl bg-slate-900/70 border border-slate-800 shadow-xl px-8 py-10">
+        <h1 className="text-3xl font-semibold text-center mb-2">Create account</h1>
+        <p className="text-sm text-slate-400 text-center mb-8">
+          Join{" "}
+          <span className="font-semibold text-indigo-400">Panel Verse</span> and
+          start sharing your comics.
+        </p>
+
+        {serverError && (
+          <div className="mb-4 text-sm text-red-400 bg-red-950/40 border border-red-500/40 rounded-lg px-3 py-2">
+            {serverError}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          {/* Name */}
+          <div>
+            <label className="block text-sm font-medium mb-1" htmlFor="name">
+              Name
+            </label>
+            <input
+              id="name"
+              type="text"
+              {...register("name", { required: "Name is required" })}
+              className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+            {errors.name && (
+              <p className="mt-1 text-xs text-red-400">{errors.name.message}</p>
+            )}
+          </div>
+
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium mb-1" htmlFor="email">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              {...register("email", { required: "Email is required" })}
+              className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+            {errors.email && (
+              <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>
+            )}
+          </div>
+
+          {/* Password */}
+          <div>
+            <label
+              className="block text-sm font-medium mb-1"
+              htmlFor="password"
+            >
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              autoComplete="new-password"
+              {...register("password", { required: "Password is required" })}
+              className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+            {errors.password && (
+              <p className="mt-1 text-xs text-red-400">
+                {errors.password.message}
+              </p>
+            )}
+          </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full inline-flex items-center justify-center rounded-lg bg-indigo-500 px-4 py-2.5 text-sm font-medium hover:bg-indigo-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          >
+            {loading ? "Signing up…" : "Sign up"}
+          </button>
+        </form>
+
+        <p className="mt-6 text-center text-sm text-slate-400">
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="text-indigo-400 hover:text-indigo-300 font-medium"
+          >
+            Log in
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
 }
-
-export default Signup;
