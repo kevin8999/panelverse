@@ -1,1 +1,14 @@
-.venv/*
+# Ignore virtual environment directory
+.venv/
+
+# Ignore Python bytecode and caches
+__pycache__/
+*.py[cod]
+
+# Environment variables file
+.env
+
+# Node modules and build output (frontend)
+node_modules/
+dist/
+
