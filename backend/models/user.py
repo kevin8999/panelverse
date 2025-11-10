@@ -8,6 +8,10 @@ class User(BaseModel):
     email: EmailStr
     password: str # TODO: Hash password before storing
 
+class Login(BaseModel):
+    email: EmailStr
+    password: str
+
 async def add_user(database, user_data: User):
     # Adds a new user to the database
     try:

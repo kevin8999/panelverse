@@ -6,7 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 import os
 
-from models.user import User, add_user, delete_user, get_user_by_id
+from models.user import User, Login, add_user, delete_user, get_user_by_id
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -50,6 +50,14 @@ async def signup(user: User):
     })
 
     return {"message": f"{user.name} successfully registered"}
+
+@app.post("/api/login")
+async def login(credentials: Login):
+    db_user = await db.users.find_one({"email": credentials.email})
+    if not db_user or db_user["password"] != credentials.password:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    return {"message": f"Welcome back, {db_user['name']}!"}
 
 # simple homepage endpoint
 @app.get("/")
