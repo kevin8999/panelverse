@@ -53,7 +53,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100 px-4">
       <div className="w-full max-w-md rounded-2xl bg-slate-900/70 border border-slate-800 shadow-xl px-8 py-10">
         <h1 className="text-3xl font-semibold text-center mb-2">
-          Welcome back
+          Welcome Back
         </h1>
         <p className="text-sm text-slate-400 text-center mb-8">
           Log in to continue sharing your comics on{" "}
@@ -69,7 +69,7 @@ export default function Login() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium mb-1" htmlFor="email">
+            <label style={{ textAlign: "left" }} className="block text-sm font-medium mb-1" htmlFor="email">
               Email
             </label>
             <input
@@ -89,6 +89,7 @@ export default function Login() {
           {/* Password */}
           <div>
             <label
+              style={{ textAlign: "left" }}
               className="block text-sm font-medium mb-1"
               htmlFor="password"
             >

@@ -17,10 +17,10 @@ export default function Home() {
       {/* hero */}
       <section className="relative border-b border-slate-200 bg-gradient-to-b from-white to-slate-50">
         <div className="container py-12 md:py-16">
-          <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+          <h1 style={{ textAlign: "left" }} className="max-w-3xl text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
             Welcome back to <span className="text-indigo-600">PanelVerse</span>!
           </h1>
-          <p className="mt-3 max-w-2xl text-lg text-slate-600">
+          <p style={{ textAlign: "left" }} className="mt-3 max-w-2xl text-lg text-slate-600">
             Discover the latest creations from your favorite artists and explore new stories.
           </p>
 
@@ -29,7 +29,7 @@ export default function Home() {
             <a className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100" href="/browse">
               Browse Comics
             </a>
-            <a className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700" href="/upload">
+            <a style={{ color: "white" }}className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700" href="/upload">
               Upload New Work
             </a>
           </div>
