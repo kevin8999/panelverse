@@ -1,6 +1,6 @@
-# Panel Verse
+# Panelverse
 
-Panel Verse is a website where artists can share comics with others online for free with no ads!
+Panelverse is a website where artists can share comics with others online for free with no ads!
 
 ## Running the App
 
@@ -11,7 +11,7 @@ Then, follow the steps below.
 1. Change into the project directory.
 
     ```shell
-    cd panel-verse/
+    cd panelverse/
     ```
 
 2. Launch Docker by opening the application on your device.
