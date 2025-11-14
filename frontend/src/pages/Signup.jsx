@@ -36,8 +36,16 @@ export default function Signup() {
         return;
       }
 
+      // Save the JWT
+      if (body.access_token) {
+        localStorage.setItem("token", body.access_token);
+        console.log("Saved token:", localStorage.getItem("token"));
+      }
+
       console.log("Successfully registered!");
-      alert(body.message || "Registration successful!");
+      
+      // Redirect to another page
+      window.location.href = "/upload"
     } catch (err) {
       console.error("Registration failed:", err);
       setServerError("Network error. Please try again.");
