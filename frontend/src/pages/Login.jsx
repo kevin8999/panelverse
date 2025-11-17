@@ -36,8 +36,27 @@ export default function Login() {
         return;
       }
 
+    // 🔹🔹 ADD THIS BLOCK: save user info for the Profile page 🔹🔹
+    // Adjust this depending on how your backend sends the data.
+    // Example 1: backend returns { id, username, email, role, message }
+    const user = body.user || body; // if your API nests it under `user`, this still works
+
+    const userData = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role, // "artist" or "viewer"/"consumer"
+      // bio: user.bio, // optional, if you have it
+    };
+
+    localStorage.setItem("panelverseUser", JSON.stringify(userData));
+    // 🔹🔹 END ADDED BLOCK 🔹🔹
+
+
       console.log("Successfully logged in!");
       alert(body.message || "Login successful!");
+
+localStorage.setItem("panelverseUser", JSON.stringify(userData));
 
       // redirect after successful login
       navigate("/");
