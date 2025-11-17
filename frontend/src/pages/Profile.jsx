@@ -151,15 +151,6 @@ function ReaderProfileSection() {
           can easily jump back in.
         </p>
       </section>
-
-      {/* Reader preferences */}
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-        <h3 className="text-lg font-semibold mb-2">Reading preferences</h3>
-        <p className="text-sm text-slate-400">
-          Later you can personalize theme, content filters, and other settings
-          to match how you like to read.
-        </p>
-      </section>
     </>
   );
 }
