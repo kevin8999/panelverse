@@ -12,10 +12,23 @@ export default function Signup() {
 
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
-  const [role, setRole] = useState("");
+  const [role, setRole] = useState(""); // "artist" or "reader"
 
   const onSubmit = async (data) => {
-    data.role = role; // include role in submission
+    // Make sure a role is selected
+    if (!role) {
+      setServerError("Please select your role (Artist or Reader).");
+      return;
+    }
+
+    // Normalize role to either "artist" or "reader"
+    const normalizedRole = role.toLowerCase() === "artist" ? "artist" : "reader";
+
+    const payload = {
+      ...data,
+      role: normalizedRole,
+    };
+
     try {
       setLoading(true);
       setServerError("");
@@ -25,7 +38,7 @@ export default function Signup() {
       const response = await fetch(`${API_URL}/api/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
       const body = await response.json().catch(() => ({}));
@@ -38,6 +51,8 @@ export default function Signup() {
 
       console.log("Successfully registered!");
       alert(body.message || "Registration successful!");
+      // you can navigate to /login here if you want
+      // navigate("/login");
     } catch (err) {
       console.error("Registration failed:", err);
       setServerError("Network error. Please try again.");
@@ -65,7 +80,11 @@ export default function Signup() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           {/* Name */}
           <div>
-            <label style={{ textAlign: "left" }} className="block text-sm font-medium mb-1" htmlFor="name">
+            <label
+              style={{ textAlign: "left" }}
+              className="block text-sm font-medium mb-1"
+              htmlFor="name"
+            >
               Name
             </label>
             <input
@@ -81,7 +100,11 @@ export default function Signup() {
 
           {/* Email */}
           <div>
-            <label style={{ textAlign: "left" }} className="block text-sm font-medium mb-1" htmlFor="email">
+            <label
+              style={{ textAlign: "left" }}
+              className="block text-sm font-medium mb-1"
+              htmlFor="email"
+            >
               Email
             </label>
             <input
@@ -119,49 +142,49 @@ export default function Signup() {
             )}
           </div>
 
-         {/* Role selection */}
-         <div className="pt-2">
-           <p className="text-sm font-medium mb-2 text-center text-slate-300">
-             I am a...
-           </p>
-           <div className="flex justify-center gap-4">
-             <button
-               type="button"
-               onClick={() => setRole("artist")}
-               className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                 role === "artist"
-                   ? "bg-indigo-600 border-indigo-500 text-white"
-                   : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
-               }`}
-             >
-               Artist
-             </button>
- 
-             <button
-               type="button"
-               onClick={() => setRole("viewer")}
-               className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                 role === "viewer"
-                   ? "bg-indigo-600 border-indigo-500 text-white"
-                   : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
-               }`}
-             >
-               Viewer
-             </button>
-           </div>
- 
-           {!role && (
-             <p className="mt-1 text-xs text-center text-red-400">
-               Please select your role.
-             </p>
-           )}
-         </div>     
+          {/* Role selection */}
+          <div className="pt-2">
+            <p className="text-sm font-medium mb-2 text-center text-slate-300">
+              I am a...
+            </p>
+            <div className="flex justify-center gap-4">
+              <button
+                type="button"
+                onClick={() => setRole("artist")}
+                className={`px-4 py-2 rounded-lg text-sm text-black font-medium border transition-colors ${
+                  role === "artist"
+                    ? "bg-indigo-600 border-indigo-500 text-black"
+                    : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+                }`}
+              >
+                Artist
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRole("reader")}
+                className={`px-4 py-2 rounded-lg text-sm text-black font-medium border transition-colors ${
+                  role === "reader"
+                    ? "bg-indigo-600 border-indigo-500 text-black"
+                    : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+                }`}
+              >
+                Reader
+              </button>
+            </div>
+
+            {!role && (
+              <p className="mt-1 text-xs text-center text-red-400">
+                Please select your role.
+              </p>
+            )}
+          </div>
 
           {/* Submit */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full inline-flex items-center justify-center rounded-lg bg-indigo-500 px-4 py-2.5 text-sm font-medium hover:bg-indigo-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            className="w-full inline-flex items-center justify-center rounded-lg bg-indigo-500 px-4 py-2.5 text-sm font-medium text-black hover:bg-indigo-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? "Signing up…" : "Sign up"}
           </button>
@@ -171,7 +194,7 @@ export default function Signup() {
           Already have an account?{" "}
           <Link
             to="/login"
-            className="text-indigo-400 hover:text-indigo-300 font-medium"
+            className="text-indigo-400 text-black hover:text-indigo-300 font-medium"
           >
             Log in
           </Link>
