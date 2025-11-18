@@ -36,27 +36,25 @@ export default function Login() {
         return;
       }
 
-    // 🔹🔹 ADD THIS BLOCK: save user info for the Profile page 🔹🔹
-    // Adjust this depending on how your backend sends the data.
-    // Example 1: backend returns { id, username, email, role, message }
-    const user = body.user || body; // if your API nests it under `user`, this still works
+      //  SAVE USER INFO FOR PROFILE PAGE
+      // Expecting backend to return: { message, user: { id, name/username, email, role } }
+      const user = body.user || body; // if your API nests under `user`, this works
 
-    const userData = {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      role: user.role, // "artist" or "viewer"/"consumer"
-      // bio: user.bio, // optional, if you have it
-    };
+      const userData = {
+        id: user.id || user._id, // handle Mongo _id if you send that
+        // Profile looks at username first, then name
+        username: user.username || user.name || "",
+        name: user.name || user.username || "",
+        email: user.email || data.email,
+        role: (user.role || "Reader").toLowerCase(), // "artist" or "reader"
+        // bio: user.bio, // optional
+      };
 
-    localStorage.setItem("panelverseUser", JSON.stringify(userData));
-    // 🔹🔹 END ADDED BLOCK 🔹🔹
-
+      localStorage.setItem("panelverseUser", JSON.stringify(userData));
+      //  END SAVE BLOCK
 
       console.log("Successfully logged in!");
       alert(body.message || "Login successful!");
-
-localStorage.setItem("panelverseUser", JSON.stringify(userData));
 
       // redirect after successful login
       navigate("/");
@@ -88,7 +86,11 @@ localStorage.setItem("panelverseUser", JSON.stringify(userData));
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           {/* Email */}
           <div>
-            <label style={{ textAlign: "left" }} className="block text-sm font-medium mb-1" htmlFor="email">
+            <label
+              style={{ textAlign: "left" }}
+              className="block text-sm font-medium mb-1"
+              htmlFor="email"
+            >
               Email
             </label>
             <input
@@ -132,7 +134,7 @@ localStorage.setItem("panelverseUser", JSON.stringify(userData));
           <button
             type="submit"
             disabled={loading}
-            className="w-full inline-flex items-center justify-center rounded-lg bg-indigo-500 px-4 py-2.5 text-sm font-medium hover:bg-indigo-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            className="w-full inline-flex items-center justify-center rounded-lg bg-indigo-500 px-4 py-2.5 text-black text-sm font-medium hover:bg-indigo-400 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? "Logging in…" : "Log in"}
           </button>
