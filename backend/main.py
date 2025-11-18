@@ -34,6 +34,7 @@ class User(BaseModel):
     name: str
     email: EmailStr
     password: str
+    role: str  # "artist" or "reader"
 
 @app.post("/api/signup")
 async def signup(user: User):
@@ -41,15 +42,18 @@ async def signup(user: User):
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    #hashed_pw = pwd_context.hash(user.password[:72])
-    await db.users.insert_one({
+    # hashed_pw = pwd_context.hash(user.password[:72])
+
+    # store the role in MongoDB
+    result = await db.users.insert_one({
         "name": user.name,
         "email": user.email,
         "password": user.password,
-        "id": 0
+        "role": user.role,
     })
 
     return {"message": f"{user.name} successfully registered"}
+
 
 @app.post("/api/login")
 async def login(credentials: Login):
@@ -57,7 +61,19 @@ async def login(credentials: Login):
     if not db_user or db_user["password"] != credentials.password:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    return {"message": f"Welcome back, {db_user['name']}!"}
+    # Build a user object to send to frontend
+    user_response = {
+        "id": str(db_user.get("_id")),
+        "name": db_user.get("name", ""),
+        "email": db_user.get("email", ""),
+        "role": db_user.get("role", "Reader"),  # default in case old users have no role
+    }
+
+    return {
+        "message": f"Welcome back, {db_user.get('name', 'user')}!",
+        "user": user_response,
+    }
+
 
 # simple homepage endpoint
 @app.get("/")
