@@ -33,7 +33,7 @@ function Profile() {
     );
   }
 
-  const isArtist = user.role === "artist"; // role: "artist" or "viewer"/"consumer"
+  const isArtist = (user.role || "").toLowerCase() == 'artist'; // role: "Artist" or "Reader"
 
   const displayName = user.username || user.name || "Unnamed user";
   const email = user.email || "No email on file";
@@ -118,15 +118,6 @@ function ArtistProfileSection() {
         <p className="text-sm text-slate-400">
           Once you start uploading, your comics will show up here. You can then
           see stats like views and likes.
-        </p>
-      </section>
-
-      {/* Artist settings / info */}
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-        <h3 className="text-lg font-semibold mb-2">Artist settings</h3>
-        <p className="text-sm text-slate-400">
-          In the future, you can customize your creator name, links to social
-          media, and default upload settings here.
         </p>
       </section>
     </>
