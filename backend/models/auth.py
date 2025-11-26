@@ -1,9 +1,6 @@
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
-
-SECRET_KEY = "super_secret_key_here"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 14 # 2 weeks
+from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
