@@ -26,3 +26,12 @@ async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)
     if user is None:
         raise credentials_exception
     return user
+
+async def get_admin_user(current_user=Depends(get_current_user)):
+    """Ensure the current user has admin privileges."""
+    if current_user.get("role") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Administrative privileges required",
+        )
+    return current_user
