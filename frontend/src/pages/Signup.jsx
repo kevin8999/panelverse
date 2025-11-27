@@ -49,6 +49,12 @@ export default function Signup() {
         return;
       }
 
+      // Save the JWT
+      if (body.access_token) {
+        localStorage.setItem("token", body.access_token);
+        console.log("Saved token:", localStorage.getItem("token"));
+      }
+
       console.log("Successfully registered!");
       alert(body.message || "Registration successful!");
       // you can navigate to /login here if you want

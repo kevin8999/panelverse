@@ -1,2 +1,36 @@
+# Environment variables
+.env
+
+# Python
 __pycache__/*
-.venv/*
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+.venv/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads (don't commit user files)
+media/uploads/*
+!media/uploads/.gitkeep
+
+# Test files
+tmp_test/
