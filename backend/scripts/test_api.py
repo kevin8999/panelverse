@@ -47,22 +47,83 @@ def upload_comic(token):
 
     headers = {"Authorization": f"Bearer {token}"}
     files = [("files", ("demo.png", open(img_path, "rb"), "image/png"))]
-    data = {"title": "My First Upload", "description": "Test upload"}
+    data = {
+        "title": "Superhero Adventures", 
+        "description": "A thrilling comic about superheroes.",
+        "tags": "superhero, action, adventure"
+    }
 
     r = requests.post(f"{API}/upload", headers=headers, files=files, data=data, timeout=10)
     print("Upload:", r.status_code)
     try:
-        print(r.json())
+        result = r.json()
+        print(f"Title: {result.get('message')}")
+        print(f"Tags: {result.get('tags')}")
     except Exception:
         print(r.text)
     return r
 
 def list_comics(token):
     headers = {"Authorization": f"Bearer {token}"}
-    r = requests.get(f"{API}/comics", headers=headers, timeout=5)
-    print("List Comics:", r.status_code)
+
+    # Test 1: List all comics
+    r = requests.get(f"{API}/comics", headers=headers)
+    print("\n=== List All Comics ===")
+    print("Status:", r.status_code)
     try:
-        print(r.json())
+        data = r.json()
+        print(f"Found {data['total']} comics")
+        print(f"Has more: {data['has_more']}")
+    except Exception:
+        print(r.text)
+    
+    # Test 2: Search by title
+    r = requests.get(f"{API}/comics?search=First", headers=headers)
+    print("\n=== Search 'First' ===")
+    print("Status:", r.status_code)
+    try:
+        print(f"Found {r.json()['total']} results")
+    except Exception:
+        print(r.text)
+    
+    # Test 3: Pagination
+    r = requests.get(f"{API}/comics?limit=2&skip=0", headers=headers)
+    print("\n=== Pagination (limit=2) ===")
+    print("Status:", r.status_code)
+    try:
+        data = r.json()
+        print(f"Showing {len(data['comics'])} of {data['total']} comics")
+    except Exception:
+        print(r.text)
+    
+    # Test 4: Sort by title
+    r = requests.get(f"{API}/comics?sort_by=title&order=asc", headers=headers)
+    print("\n=== Sort by Title (ascending) ===")
+    print("Status:", r.status_code)
+    try:
+        comics = r.json()['comics']
+        print("Titles:", [c['title'] for c in comics])
+    except Exception:
+        print(r.text)
+
+    # Test 5: Filter by tags (NEW)
+    r = requests.get(f"{API}/comics?tags=action,superhero", headers=headers)
+    print("\n=== Filter by Tags (action, superhero) ===")
+    print("Status:", r.status_code)
+    try:
+        data = r.json()
+        print(f"Found {data['total']} comics with those tags")
+        for comic in data['comics']:
+            print(f"  - {comic['title']}: {comic.get('tags', [])}")
+    except Exception:
+        print(r.text)
+    
+    # Test 6: Get all unique tags (NEW endpoint - see below)
+    r = requests.get(f"{API}/comics/tags", headers=headers)
+    print("\n=== All Available Tags ===")
+    print("Status:", r.status_code)
+    try:
+        print(f"Tags: {r.json()['tags']}")
     except Exception:
         print(r.text)
 

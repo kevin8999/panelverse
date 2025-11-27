@@ -5,7 +5,7 @@ load_dotenv()
 
 # MongoDB
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
-DB_NAME = os.getenv("DB_NAME", "userdb")
+DB_NAME = os.getenv("DB_NAME", "comics-db")
 
 # JWT / Auth
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")
