@@ -46,6 +46,7 @@ async def signup(user: UserSignup, request: Request):
         "email": user.email,
         "password": hashed_password, # stores hashed password
         "id": next_id,
+        "role": "user",
         "access_token": access_token,
         "token_type": "bearer"
     }

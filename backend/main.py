@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from motor.motor_asyncio import AsyncIOMotorClient
 from config import MONGO_URI, DB_NAME, ALLOWED_ORIGINS, UPLOAD_DIR
-from routers import auth, user, comics
+from routers import auth, user, comics, admin
 from pathlib import Path
 from contextlib import asynccontextmanager
 
@@ -37,6 +37,7 @@ app.mount("/media", StaticFiles(directory=UPLOAD_DIR), name="media")
 app.include_router(auth.router)
 app.include_router(user.router)
 app.include_router(comics.router)
+app.include_router(admin.router)
 
 # Health endpoints
 @app.get("/")
