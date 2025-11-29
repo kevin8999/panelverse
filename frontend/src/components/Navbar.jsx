@@ -1,29 +1,65 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useNavigate, useLocation } from "react-router-dom"
+import { useState, useEffect } from "react"
 
 function Navbar() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem("token")
+    setIsLoggedIn(!!token)
+  }, [location.pathname])
+
+  const handleLogout = () => {
+    localStorage.removeItem("token")
+    setIsLoggedIn(false)
+    navigate("/login")
+  }
+
   return (
     <>
-      <nav style={{
-            display: "flex",
-            gap: "1rem",
-            justifyContent: "flex-end",
-            borderBottom: "1px solid #ccc",
-            padding: "1rem",
-            paddingRight: "3em"
-        }}>
-        <Link to="/">Home</Link>
-        <Link to="/browse">Browse</Link>
-        <Link to="/upload">Upload</Link>
-        <Link to="/profile">Profile</Link>
-        <Link to="/login">Login</Link>
-        <Link to="/signup">Signup</Link>
+      <nav className="flex gap-4 justify-end border-b border-slate-700 bg-slate-900 px-8 py-4">
+        <Link to="/" className="text-slate-100 hover:text-indigo-400 transition">
+          Home
+        </Link>
+        <Link to="/browse" className="text-slate-100 hover:text-indigo-400 transition">
+          Browse
+        </Link>
+        
+        {isLoggedIn ? (
+          <>
+            <Link to="/upload" className="text-slate-100 hover:text-indigo-400 transition">
+              Upload
+            </Link>
+            <Link to="/profile" className="text-slate-100 hover:text-indigo-400 transition">
+              Profile
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="text-slate-100 hover:text-red-400 transition"
+            >
+              Logout
+            </button>
+          </>
+        ) : (
+          <>
+            <Link to="/login" className="text-slate-100 hover:text-indigo-400 transition">
+              Login
+            </Link>
+            <Link to="/signup" className="text-slate-100 hover:text-indigo-400 transition">
+              Signup
+            </Link>
+          </>
+        )}
       </nav>
 
-      <main style={{ width: "100%", boxSizing: "border-box" }}>
+      <main className="w-full">
         <Outlet />
       </main>
     </>
-  );
+  )
 }
 
-export default Navbar;
+export default Navbar

@@ -25,6 +25,9 @@ async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)
     user = await db.users.find_one({"email": user_email})
     if user is None:
         raise credentials_exception
+    
+    # Normalize the user object to have both _id and id for backward compatibility
+    user["id"] = user["_id"]
     return user
 
 async def get_admin_user(current_user=Depends(get_current_user)):

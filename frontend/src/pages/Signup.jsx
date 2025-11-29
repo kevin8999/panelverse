@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
+import { API_BASE_URL } from "../config";
 import "../App.css";
 
 export default function Signup() {
@@ -33,9 +34,7 @@ export default function Signup() {
       setLoading(true);
       setServerError("");
 
-      const API_URL = import.meta.env.VITE_API_URL;
-
-      const response = await fetch(`${API_URL}/api/signup`, {
+      const response = await fetch(`${API_BASE_URL}/api/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

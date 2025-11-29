@@ -1,9 +1,12 @@
 import { useState } from "react"
+import { API_BASE_URL } from "../config"
 
 export default function UploadPage() {
   const [files, setFiles] = useState([])
   const [previews, setPreviews] = useState([])
   const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [tags, setTags] = useState("")
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState("")
 
@@ -38,6 +41,14 @@ export default function UploadPage() {
   const handleUpload = async (e) => {
     e.preventDefault()
   
+    // Get token from localStorage (check login status first)
+    const token = localStorage.getItem("token")
+    if (!token) {
+      setError("You must be logged in to upload. Please login first.")
+      setUploading(false)
+      return
+    }
+
     if (!title.trim()) {
       setError("Please enter a post name.")
       return
@@ -53,10 +64,15 @@ export default function UploadPage() {
     try {
       const formData = new FormData()
       formData.append("title", title)
+      formData.append("description", description)
+      formData.append("tags", tags)
       files.forEach((file) => formData.append("files", file))
   
-      const res = await fetch("http://localhost:8000/api/upload", {
+      const res = await fetch(`${API_BASE_URL}/api/upload`, {
         method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
         body: formData,
       })
   
@@ -67,8 +83,11 @@ export default function UploadPage() {
   
       alert("Upload successful!")
       setTitle("")
+      setDescription("")
+      setTags("")
       setFiles([])
       setPreviews([])
+      setError("")
     } catch (err) {
       setError(err.message || "Upload failed. Try again.")
     } finally {
@@ -88,6 +107,13 @@ export default function UploadPage() {
         {error && (
           <div className="mb-4 text-sm text-red-400 bg-red-950/40 border border-red-500/40 rounded-lg px-3 py-2">
             {error}
+            {error.includes("logged in") && (
+              <div className="mt-2">
+                <a href="/login" className="text-indigo-400 hover:text-indigo-300 underline">
+                  Click here to login
+                </a>
+              </div>
+            )}
           </div>
         )}
 
@@ -110,6 +136,42 @@ export default function UploadPage() {
             />
           </div>
 
+          {/* Description */}
+          <div>
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium mb-1 text-left"
+            >
+              Description (optional)
+            </label>
+            <textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe your comic..."
+              rows={4}
+              className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+            />
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label
+              htmlFor="tags"
+              className="block text-sm font-medium mb-1 text-left"
+            >
+              Tags (optional)
+            </label>
+            <input
+              id="tags"
+              type="text"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="action, superhero, marvel"
+              className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+
           {/* Upload Area */}
           <div>
             <label
@@ -118,38 +180,38 @@ export default function UploadPage() {
             >
               Comic files
             </label>
-            <div
+            <label
+              htmlFor="files"
               className="w-full h-36 flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-700 bg-slate-900 hover:bg-slate-800 transition-colors cursor-pointer text-center px-3"
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleDrop}
-              onClick={() => document.getElementById("files").click()}
             >
               {files.length > 0 ? (
                 <>
                   <p className="text-sm text-indigo-400 mb-1">
                     {files.length} image(s) selected
                   </p>
-                  <p className="text-xs text-slate-500">Click to change</p>
+                  <p className="text-xs text-slate-500">Click to change or select more</p>
                 </>
               ) : (
                 <>
                   <p className="text-sm text-slate-400">
-                    Drag & drop or click to select
+                    Click here or drag & drop
                   </p>
                   <p className="text-xs text-slate-500 mt-1">
-                    (You can upload multiple images)
+                    ⚡ Select multiple images at once (Cmd+Click or Shift+Click)
                   </p>
                 </>
               )}
-              <input
-                id="files"
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleFileChange}
-                className="hidden"
-              />
-            </div>
+            </label>
+            <input
+              id="files"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileChange}
+              className="hidden"
+            />
           </div>
 
           {/* Image Previews */}
