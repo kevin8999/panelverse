@@ -1,16 +1,103 @@
-import Footer from "../components/Footer";
-import ComicCard from "../components/ComicCard";
-
-const mock = [
-  { id: 1, title: "Galaxy Girl", artist: "Maya Ganot" },
-  { id: 2, title: "Shadowline", artist: "Chris Okorochukwu" },
-  { id: 3, title: "Dreamwalker", artist: "Hithisha Dubbaka" },
-  { id: 4, title: "PanelQuest", artist: "Kevin Duong" },
-  { id: 5, title: "Neon Harbor", artist: "Guest Artist" },
-  { id: 6, title: "Clockwork Alley", artist: "Guest Artist" },
-];
+import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
+import { API_BASE_URL } from "../config"
+import Footer from "../components/Footer"
+import ComicCard from "../components/ComicCard"
 
 export default function Home() {
+  const [comics, setComics] = useState([])
+  const [savedComicIds, setSavedComicIds] = useState(new Set())
+  const [currentUserId, setCurrentUserId] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    fetchCurrentUser()
+    fetchSavedComics()
+    fetchFeaturedComics()
+  }, [])
+
+  const fetchCurrentUser = async () => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/users/me`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setCurrentUserId(data.id)
+      }
+    } catch (err) {
+      console.error("Failed to fetch user:", err)
+    }
+  }
+
+  const fetchSavedComics = async () => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/users/me/saved`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setSavedComicIds(new Set(data.comics.map(c => c._id)))
+      }
+    } catch (err) {
+      console.error("Failed to fetch saved comics:", err)
+    }
+  }
+
+  const fetchFeaturedComics = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/comics?limit=6`)
+      if (res.ok) {
+        const data = await res.json()
+        setComics(data.comics || [])
+      }
+    } catch (err) {
+      console.error("Failed to fetch comics:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSave = async (comicId) => {
+    const token = localStorage.getItem("token")
+    if (!token) {
+      navigate("/login")
+      return
+    }
+
+    try {
+      const isSaved = savedComicIds.has(comicId)
+      const method = isSaved ? "DELETE" : "POST"
+      
+      const res = await fetch(`${API_BASE_URL}/api/comics/${comicId}/save`, {
+        method,
+        headers: { "Authorization": `Bearer ${token}` }
+      })
+
+      if (res.ok) {
+        setSavedComicIds(prev => {
+          const newSet = new Set(prev)
+          if (isSaved) {
+            newSet.delete(comicId)
+          } else {
+            newSet.add(comicId)
+          }
+          return newSet
+        })
+      }
+    } catch (err) {
+      console.error("Failed to save comic:", err)
+    }
+  }
+
   return (
     <div className="min-h-screen">
 
@@ -45,14 +132,38 @@ export default function Home() {
           </a>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {mock.map((c) => (
-            <ComicCard key={c.id} title={c.title} artist={c.artist} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-slate-500">Loading comics...</p>
+          </div>
+        ) : comics.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-slate-500">No comics uploaded yet. Be the first to upload!</p>
+            <a href="/upload" className="mt-4 inline-block text-indigo-600 hover:underline">
+              Upload a comic →
+            </a>
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {comics.map((c) => (
+              <ComicCard 
+                key={c._id} 
+                id={c._id}
+                title={c.title} 
+                description={c.description}
+                coverUrl={c.cover_url}
+                tags={c.tags}
+                isOwner={c.author_id === currentUserId}
+                isSaved={savedComicIds.has(c._id)}
+                onSave={handleSave}
+                onClick={() => navigate(`/comic/${c._id}`)}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       <Footer />
     </div>
-  );
+  )
 }

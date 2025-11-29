@@ -66,10 +66,13 @@ async def upload_comic(
         saved_files.append({
             "filename": unique_filename,
             "original_filename": file.filename,
-            "url": f"/{UPLOAD_DIR}/{unique_filename}"
+            "url": f"/media/uploads/{unique_filename}"
         })
 
     tags_list = [tag.strip().lower() for tag in tags.split(",") if tags.strip()]
+
+    # Use the first page as the cover image
+    cover_url = saved_files[0]["url"] if saved_files else None
 
     # save comic metadata to database
     comic_data = {
@@ -79,6 +82,7 @@ async def upload_comic(
         "author_id": current_user["id"],
         "files": saved_files,
         "file_count": len(saved_files),
+        "cover_url": cover_url,  # First page as cover
         "uploaded_by": current_user["email"],
         "upload_date": datetime.now(timezone.utc),
         "published": False
@@ -95,7 +99,6 @@ async def upload_comic(
 @router.get("/comics")
 async def list_comics(
     request: Request, 
-    current_user=Depends(get_current_user),
     search: str = None,
     tags: str = None,
     published: bool = None,
@@ -105,7 +108,7 @@ async def list_comics(
     skip: int = 0
 ):
     """
-    List comics with search, filter, sort, and pagination.
+    List ALL comics with search, filter, sort, and pagination (no authentication required).
     
     - **search**: Search in title, description (case-insensitive)
     - **tags**: Comma-separated tags to filter by
@@ -117,8 +120,8 @@ async def list_comics(
     """
     db = request.app.mongodb
     
-    # build query filter
-    query = {"author_id": current_user["id"]}
+    # build query filter - show all comics from all users
+    query = {}
 
     # search in title and description
     if search:
@@ -170,7 +173,7 @@ async def list_comics(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving comics: {str(e)}")
 
-@router.get("/{comic_id}")
+@router.get("/comics/{comic_id}")
 async def get_comic(comic_id: str, request: Request):
     """Retrieve a single comic's metadata by ID"""
     database = request.app.mongodb
@@ -178,7 +181,12 @@ async def get_comic(comic_id: str, request: Request):
         comic = await database.comics.find_one({"_id": ObjectId(comic_id)})
         if not comic:
             raise HTTPException(status_code=404, detail="Comic not found.")
-        comic["id"] = str(comic["_id"])
+        
+        # Convert ObjectId and datetime to strings
+        comic["_id"] = str(comic["_id"])
+        if "upload_date" in comic:
+            comic["upload_date"] = str(comic["upload_date"])
+        
         return comic
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid comic ID: {e}")
@@ -261,4 +269,185 @@ async def update_comic_tags(
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error updating tags: {str(e)}")
+
+
+@router.patch("/comics/{comic_id}")
+async def update_comic(
+    comic_id: str,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    title: str = Form(None),
+    description: str = Form(None),
+    tags: str = Form(None),
+    files: List[UploadFile] = File(None),
+    current_user=Depends(get_current_user)
+):
+    """Update comic metadata and/or add new pages (chapters)"""
+    database = request.app.mongodb
+
+    try:
+        comic = await database.comics.find_one({"_id": ObjectId(comic_id)})
+        if not comic:
+            raise HTTPException(status_code=404, detail="Comic not found.")
+        
+        if comic["author_id"] != current_user["id"]:
+            raise HTTPException(status_code=403, detail="Not authorized to update this comic.")
+        
+        update_data = {}
+        
+        # Update basic info if provided
+        if title:
+            update_data["title"] = title
+        if description is not None:
+            update_data["description"] = description
+        if tags is not None:
+            tag_list = [tag.strip().lower() for tag in tags.split(",") if tag.strip()]
+            update_data["tags"] = tag_list
+        
+        # Add new pages if files provided
+        if files:
+            new_files = []
+            for file in files:
+                # validate file extension
+                extension = Path(file.filename).suffix.lower()
+                if extension not in ALLOWED_EXTENSIONS:
+                    raise HTTPException(status_code=400, detail=f"File type {extension} not allowed.")
+                
+                # read and validate file size
+                contents = await file.read()
+                if len(contents) > MAX_FILE_SIZE:
+                    raise HTTPException(status_code=413, detail="File size exceeds maximum limit.")
+                
+                # generate unique filename and save file
+                unique_filename = f"{uuid.uuid4().hex}{extension}"
+                file_path = os.path.join(UPLOAD_DIR, unique_filename)
+
+                with open(file_path, "wb") as f:
+                    f.write(contents)
+
+                # create thumbnail in background
+                if extension in [".jpg", ".jpeg", ".png"]:
+                    background_tasks.add_task(create_thumbnail, file_path)
+
+                new_files.append({
+                    "filename": unique_filename,
+                    "original_filename": file.filename,
+                    "url": f"/media/uploads/{unique_filename}"
+                })
+            
+            # Append new files to existing files
+            existing_files = comic.get("files", [])
+            updated_files = existing_files + new_files
+            update_data["files"] = updated_files
+            update_data["file_count"] = len(updated_files)
+        
+        if update_data:
+            await database.comics.update_one(
+                {"_id": ObjectId(comic_id)},
+                {"$set": update_data}
+            )
+        
+        return {
+            "message": "Comic updated successfully",
+            "comic_id": comic_id,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error updating comic: {str(e)}")
+
+
+@router.post("/comics/{comic_id}/save")
+async def save_comic(comic_id: str, request: Request, current_user=Depends(get_current_user)):
+    """Save/bookmark a comic to user's favorites"""
+    database = request.app.mongodb
+
+    try:
+        # Check if comic exists
+        comic = await database.comics.find_one({"_id": ObjectId(comic_id)})
+        if not comic:
+            raise HTTPException(status_code=404, detail="Comic not found.")
+        
+        # Add to user's saved comics
+        await database.users.update_one(
+            {"_id": current_user["id"]},
+            {"$addToSet": {"saved_comics": ObjectId(comic_id)}}
+        )
+        
+        return {"message": "Comic saved successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error saving comic: {str(e)}")
+
+
+@router.delete("/comics/{comic_id}/save")
+async def unsave_comic(comic_id: str, request: Request, current_user=Depends(get_current_user)):
+    """Remove a comic from user's favorites"""
+    database = request.app.mongodb
+
+    try:
+        # Remove from user's saved comics
+        await database.users.update_one(
+            {"_id": current_user["id"]},
+            {"$pull": {"saved_comics": ObjectId(comic_id)}}
+        )
+        
+        return {"message": "Comic removed from saved"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error removing saved comic: {str(e)}")
+
+
+@router.get("/users/me/saved")
+async def get_saved_comics(request: Request, current_user=Depends(get_current_user)):
+    """Get all comics saved by the current user"""
+    database = request.app.mongodb
+
+    try:
+        # Get user with saved comics
+        user = await database.users.find_one({"_id": current_user["id"]})
+        saved_comic_ids = user.get("saved_comics", [])
+        
+        if not saved_comic_ids:
+            return {"comics": [], "total_count": 0}
+        
+        # Fetch all saved comics
+        comics = await database.comics.find(
+            {"_id": {"$in": saved_comic_ids}}
+        ).to_list(length=100)
+        
+        for comic in comics:
+            comic["_id"] = str(comic["_id"])
+            if "upload_date" in comic:
+                comic["upload_date"] = str(comic["upload_date"])
+        
+        return {
+            "comics": comics,
+            "total_count": len(comics)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving saved comics: {str(e)}")
+
+
+@router.get("/users/me/comics")
+async def get_my_comics(request: Request, current_user=Depends(get_current_user)):
+    """Get all comics uploaded by the current user"""
+    database = request.app.mongodb
+
+    try:
+        comics = await database.comics.find(
+            {"author_id": current_user["id"]}
+        ).sort("upload_date", -1).to_list(length=100)
+        
+        for comic in comics:
+            comic["_id"] = str(comic["_id"])
+            if "upload_date" in comic:
+                comic["upload_date"] = str(comic["upload_date"])
+        
+        return {
+            "comics": comics,
+            "total_count": len(comics)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving comics: {str(e)}")
 

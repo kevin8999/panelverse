@@ -4,7 +4,7 @@ from bson import ObjectId
 from dependencies import get_current_user
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(prefix="/api/users", tags=["users"])
 
 class UserResponse(BaseModel):
     id: int
@@ -15,7 +15,7 @@ class UserResponse(BaseModel):
 async def add_user(user: dict, request: Request):
     # Adds a new user to the database
     database = request.app.mongodb
-    
+
     try:
         result = await database.users.insert_one(user)
         if result.inserted_id:
@@ -39,6 +39,16 @@ async def delete_user(user_id: str, request: Request, current_user=Depends(get_c
         raise HTTPException(status_code=404, detail="User not found.")
     except Exception as e:
         raise Exception(f"Error deleting user: {str(e)}")
+
+@router.get("/me")
+async def get_current_user_info(current_user=Depends(get_current_user)):
+    """Get the current authenticated user's information"""
+    return {
+        "id": str(current_user["_id"]),
+        "email": current_user.get("email"),
+        "username": current_user.get("username", current_user.get("name", "")),
+        "role": current_user.get("role", "reader")
+    }
 
 @router.get("/{user_id}", response_model=UserResponse)   
 async def get_user_by_id(user_id: str, request: Request):

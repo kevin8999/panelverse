@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
+import { API_BASE_URL } from "../config";
 import "../App.css";
 
 export default function Login() {
@@ -19,9 +20,7 @@ export default function Login() {
       setLoading(true);
       setServerError("");
 
-      const API_URL = import.meta.env.VITE_API_URL;
-
-      const response = await fetch(`${API_URL}/api/login`, {
+      const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data), // { email, password }
@@ -30,34 +29,26 @@ export default function Login() {
       const body = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        // backend might send { detail: "..."} or { message: "..." }
         const msg = body.detail || body.message || "Login failed";
         setServerError(msg);
         return;
       }
 
-    // 🔹🔹 ADD THIS BLOCK: save user info for the Profile page 🔹🔹
-    // Adjust this depending on how your backend sends the data.
-    // Example 1: backend returns { id, username, email, role, message }
-    const user = body.user || body; // if your API nests it under `user`, this still works
+      // save auth token
+      if (body.access_token) {
+        localStorage.setItem("token", body.access_token);
+      }
 
+    const user = body.user || body; // if your API nests it under `user`, this still works
     const userData = {
       id: user.id,
       username: user.username,
       email: user.email,
-      role: user.role, // "artist" or "viewer"/"consumer"
-      // bio: user.bio, // optional, if you have it
+      role: user.role, 
     };
-
     localStorage.setItem("panelverseUser", JSON.stringify(userData));
-    // 🔹🔹 END ADDED BLOCK 🔹🔹
-
-
-      console.log("Successfully logged in!");
+    console.log("Successfully logged in!");
       alert(body.message || "Login successful!");
-
-localStorage.setItem("panelverseUser", JSON.stringify(userData));
-
       // redirect after successful login
       navigate("/");
     } catch (err) {

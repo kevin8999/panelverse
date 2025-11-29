@@ -30,8 +30,8 @@ app.add_middleware(
 # Create upload directory
 Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
 
-# Serve media files
-app.mount("/media", StaticFiles(directory=UPLOAD_DIR), name="media")
+# Serve media files - mount at /media and serve from media/ directory
+app.mount("/media", StaticFiles(directory="media"), name="media")
 
 # Include routers
 app.include_router(auth.router)
