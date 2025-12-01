@@ -137,7 +137,8 @@ export default function Profile() {
     navigate(`/edit/${comicId}`)
   }
 
-  const comics = activeTab === "uploads" ? myComics : savedComics
+  // For readers, always show saved comics; for artists, show based on activeTab
+  const comics = user?.role === "reader" ? savedComics : (activeTab === "uploads" ? myComics : savedComics)
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8">
@@ -146,12 +147,28 @@ export default function Profile() {
         <div className="mb-8">
           {user && (
             <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
-              <div className="h-16 w-16 rounded-full bg-gradient-to-br from-indigo-500 to-fuchsia-500 flex items-center justify-center text-2xl font-bold shadow-lg">
-                {(user.email?.[0] || "U").toUpperCase()}
+              <div className={`h-16 w-16 rounded-full ${
+                user.role === "admin" 
+                  ? "bg-gradient-to-br from-amber-500 to-orange-600" 
+                  : "bg-gradient-to-br from-indigo-500 to-fuchsia-500"
+              } flex items-center justify-center text-2xl font-bold shadow-lg`}>
+                {user.role === "admin" ? "👑" : (user.email?.[0] || "U").toUpperCase()}
               </div>
 
               <div className="flex-1">
-                <h1 className="text-2xl font-bold mb-1">{user.username || "User"}</h1>
+                <div className="flex items-center gap-2 mb-1">
+                  <h1 className="text-2xl font-bold">{user.username || user.name || "User"}</h1>
+                  {user.role === "admin" && (
+                    <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      ADMIN
+                    </span>
+                  )}
+                  {user.role === "artist" && (
+                    <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                      ARTIST
+                    </span>
+                  )}
+                </div>
                 <p className="text-slate-400">{user.email}</p>
               </div>
 
@@ -169,52 +186,106 @@ export default function Profile() {
           )}
 
           {/* Stats */}
-          <div className="grid gap-4 md:grid-cols-3 mb-6">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-400">My Comics</p>
-              <p className="mt-2 text-2xl font-semibold">{myComics.length}</p>
-              <p className="mt-1 text-xs text-slate-500">
-                {myComics.filter(c => c.published).length} published
-              </p>
+          {user?.role === "admin" ? (
+            // Admin Stats - Special admin dashboard
+            <div className="grid gap-4 md:grid-cols-4 mb-6">
+              <div className="rounded-2xl border border-amber-800/50 bg-gradient-to-br from-amber-900/30 to-slate-900/70 p-4">
+                <p className="text-xs uppercase tracking-wide text-amber-400">My Comics</p>
+                <p className="mt-2 text-2xl font-semibold">{myComics.length}</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {myComics.filter(c => c.published).length} published
+                </p>
+              </div>
+              <div className="rounded-2xl border border-amber-800/50 bg-gradient-to-br from-amber-900/30 to-slate-900/70 p-4">
+                <p className="text-xs uppercase tracking-wide text-amber-400">Saved Comics</p>
+                <p className="mt-2 text-2xl font-semibold">{savedComics.length}</p>
+                <p className="mt-1 text-xs text-slate-500">Bookmarked</p>
+              </div>
+              <div className="rounded-2xl border border-amber-800/50 bg-gradient-to-br from-amber-900/30 to-slate-900/70 p-4">
+                <p className="text-xs uppercase tracking-wide text-amber-400">Total Pages</p>
+                <p className="mt-2 text-2xl font-semibold">
+                  {myComics.reduce((sum, comic) => sum + (comic.file_count || 0), 0)}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">Created</p>
+              </div>
+              <div className="rounded-2xl border border-amber-800/50 bg-gradient-to-br from-amber-900/30 to-slate-900/70 p-4">
+                <p className="text-xs uppercase tracking-wide text-amber-400">Admin Tools</p>
+                <p className="mt-2 text-2xl font-semibold">👑</p>
+                <p className="mt-1 text-xs text-slate-500">Full access</p>
+              </div>
             </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-400">Saved Comics</p>
-              <p className="mt-2 text-2xl font-semibold">{savedComics.length}</p>
-              <p className="mt-1 text-xs text-slate-500">Your favorites</p>
+          ) : user?.role === "artist" ? (
+            // Artist Stats - Show all three cards
+            <div className="grid gap-4 md:grid-cols-3 mb-6">
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-400">My Comics</p>
+                <p className="mt-2 text-2xl font-semibold">{myComics.length}</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {myComics.filter(c => c.published).length} published
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Saved Comics</p>
+                <p className="mt-2 text-2xl font-semibold">{savedComics.length}</p>
+                <p className="mt-1 text-xs text-slate-500">Your favorites</p>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Total Pages</p>
+                <p className="mt-2 text-2xl font-semibold">
+                  {myComics.reduce((sum, comic) => sum + (comic.file_count || 0), 0)}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">Created by you</p>
+              </div>
             </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-400">Total Pages</p>
-              <p className="mt-2 text-2xl font-semibold">
-                {myComics.reduce((sum, comic) => sum + (comic.file_count || 0), 0)}
-              </p>
-              <p className="mt-1 text-xs text-slate-500">Created by you</p>
+          ) : (
+            // Reader Stats - Show only saved comics (larger)
+            <div className="grid gap-4 md:grid-cols-2 mb-6 max-w-2xl mx-auto">
+              <div className="rounded-2xl border border-slate-800 bg-gradient-to-br from-indigo-900/30 to-slate-900/70 p-6">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Saved Comics</p>
+                <p className="mt-2 text-3xl font-semibold">{savedComics.length}</p>
+                <p className="mt-1 text-xs text-slate-500">Your reading list</p>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-gradient-to-br from-fuchsia-900/30 to-slate-900/70 p-6">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Total Pages Read</p>
+                <p className="mt-2 text-3xl font-semibold">
+                  {savedComics.reduce((sum, comic) => sum + (comic.file_count || 0), 0)}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">Keep exploring!</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Tabs */}
-        <div className="flex justify-center gap-4 mb-8">
-          <button
-            onClick={() => setActiveTab("uploads")}
-            className={`px-6 py-2 rounded-lg font-medium transition ${
-              activeTab === "uploads"
-                ? "bg-indigo-600 text-white"
-                : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-            }`}
-          >
-            My Uploads ({myComics.length})
-          </button>
-          <button
-            onClick={() => setActiveTab("saved")}
-            className={`px-6 py-2 rounded-lg font-medium transition ${
-              activeTab === "saved"
-                ? "bg-indigo-600 text-white"
-                : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-            }`}
-          >
-            Saved Comics ({savedComics.length})
-          </button>
-        </div>
+        {/* Tabs - Only show for artists */}
+        {(user?.role === "artist" || user?.role === "admin") && (
+          <div className="flex justify-center gap-4 mb-8">
+            <button
+              onClick={() => setActiveTab("uploads")}
+              className={`px-6 py-2 rounded-lg font-medium transition ${
+                activeTab === "uploads"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+              }`}
+            >
+              My Uploads ({myComics.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("saved")}
+              className={`px-6 py-2 rounded-lg font-medium transition ${
+                activeTab === "saved"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+              }`}
+            >
+              Saved Comics ({savedComics.length})
+            </button>
+          </div>
+        )}
+
+        {/* For readers, show title for saved comics */}
+        {user?.role === "reader" && (
+          <h2 className="text-2xl font-bold mb-6 text-center">Your Reading List</h2>
+        )}
 
         {/* Content */}
         {loading ? (
@@ -224,15 +295,17 @@ export default function Profile() {
         ) : comics.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-slate-400">
-              {activeTab === "uploads"
+              {user?.role === "reader"
+                ? "You haven't saved any comics yet. Start exploring!"
+                : activeTab === "uploads"
                 ? "You haven't uploaded any comics yet."
                 : "You haven't saved any comics yet."}
             </p>
             <button
-              onClick={() => navigate(activeTab === "uploads" ? "/upload" : "/browse")}
+              onClick={() => navigate(user?.role === "reader" || activeTab === "saved" ? "/browse" : "/upload")}
               className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
             >
-              {activeTab === "uploads" ? "Upload Comic" : "Browse Comics"}
+              {user?.role === "reader" || activeTab === "saved" ? "Browse Comics" : "Upload Comic"}
             </button>
           </div>
         ) : (
@@ -245,11 +318,13 @@ export default function Profile() {
                 description={comic.description}
                 coverUrl={comic.cover_url}
                 tags={comic.tags}
-                isOwner={activeTab === "uploads"}
-                isSaved={activeTab === "saved"}
-                onSave={activeTab === "saved" ? handleUnsave : undefined}
-                onDelete={activeTab === "uploads" ? handleDelete : undefined}
-                onEdit={activeTab === "uploads" ? handleEdit : undefined}
+                likeCount={comic.like_count || 0}
+                saveCount={comic.save_count || 0}
+                isOwner={activeTab === "uploads" && (user?.role === "artist" || user?.role === "admin")}
+                isSaved={user?.role === "reader" || activeTab === "saved"}
+                onSave={user?.role === "reader" || activeTab === "saved" ? handleUnsave : undefined}
+                onDelete={activeTab === "uploads" && (user?.role === "artist" || user?.role === "admin") ? handleDelete : undefined}
+                onEdit={activeTab === "uploads" && (user?.role === "artist" || user?.role === "admin") ? handleEdit : undefined}
                 onClick={() => navigate(`/comic/${comic._id}`)}
               />
             ))}

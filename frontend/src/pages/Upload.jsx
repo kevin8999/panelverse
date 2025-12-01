@@ -245,10 +245,10 @@ export default function UploadPage() {
         <p className="mt-6 text-center text-sm text-slate-400">
           Want to manage your uploads?{" "}
           <a
-            href="/dashboard"
+            href="/profile"
             className="text-indigo-400 hover:text-indigo-300 font-medium"
           >
-            Go to Dashboard
+            Go to Profile
           </a>
         </p>
       </div>

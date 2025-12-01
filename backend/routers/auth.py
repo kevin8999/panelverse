@@ -11,10 +11,28 @@ class UserSignup(BaseModel):
     name: str
     email: EmailStr
     password: str
+    role: str = "reader"  # "artist" or "reader", defaults to reader
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+def validate_password(password: str) -> tuple[bool, str]:
+    """
+    Validate password meets security requirements.
+    Returns (is_valid, error_message)
+    """
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long"
+    if not any(c.isupper() for c in password):
+        return False, "Password must contain at least one uppercase letter"
+    if not any(c.islower() for c in password):
+        return False, "Password must contain at least one lowercase letter"
+    if not any(c.isdigit() for c in password):
+        return False, "Password must contain at least one number"
+    if not any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?" for c in password):
+        return False, "Password must contain at least one special character"
+    return True, ""
 
 async def get_next_user_id(db):
     result = await db.counters.find_one_and_update(
@@ -30,6 +48,10 @@ async def signup(user: UserSignup, request: Request):
     """Register a new user and create jwt"""
     db = request.app.mongodb
 
+    # Validate password requirements
+    is_valid, error_msg = validate_password(user.password)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error_msg)
 
     existing_user = await db.users.find_one({"email": user.email})
     if existing_user:
@@ -40,13 +62,20 @@ async def signup(user: UserSignup, request: Request):
     access_token = create_access_token(data={"sub": user.email})
 
     hashed_password = password_context.hash(user.password)
+    
+    # Validate and normalize role - NEVER allow "admin" from public signup
+    user_role = user.role.lower() if user.role.lower() in ["artist", "reader"] else "reader"
+    
+    # Security: Prevent admin role creation via public signup
+    if user_role == "admin":
+        user_role = "reader"  # Downgrade any admin attempts to reader
 
     new_user_data = {
         "name": user.name,
         "email": user.email,
         "password": hashed_password, # stores hashed password
         "id": next_id,
-        "role": "user",
+        "role": user_role,  # "artist" or "reader"
         "access_token": access_token,
         "token_type": "bearer"
     }

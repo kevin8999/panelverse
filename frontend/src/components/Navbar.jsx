@@ -1,20 +1,46 @@
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom"
 import { useState, useEffect } from "react"
+import { API_BASE_URL } from "../config"
 
 function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [userRole, setUserRole] = useState(null)
   const navigate = useNavigate()
   const location = useLocation()
 
   useEffect(() => {
-    // Check if user is logged in
+    // Check if user is logged in and fetch their role
     const token = localStorage.getItem("token")
     setIsLoggedIn(!!token)
+    
+    if (token) {
+      fetchUserRole()
+    } else {
+      setUserRole(null)
+    }
   }, [location.pathname])
+  
+  const fetchUserRole = async () => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/users/me`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setUserRole(data.role)
+      }
+    } catch (err) {
+      console.error("Failed to fetch user role:", err)
+    }
+  }
 
   const handleLogout = () => {
     localStorage.removeItem("token")
     setIsLoggedIn(false)
+    setUserRole(null)
     navigate("/login")
   }
 
@@ -30,9 +56,12 @@ function Navbar() {
         
         {isLoggedIn ? (
           <>
-            <Link to="/upload" className="text-slate-100 hover:text-indigo-400 transition">
-              Upload
-            </Link>
+            {/* Only show Upload link for artists and admins */}
+            {(userRole === "artist" || userRole === "admin") && (
+              <Link to="/upload" className="text-slate-100 hover:text-indigo-400 transition">
+                Upload
+              </Link>
+            )}
             <Link to="/profile" className="text-slate-100 hover:text-indigo-400 transition">
               Profile
             </Link>

@@ -6,6 +6,7 @@ import ComicCard from "../components/ComicCard"
 export default function Browse() {
   const [comics, setComics] = useState([])
   const [savedComicIds, setSavedComicIds] = useState(new Set())
+  const [likedComicIds, setLikedComicIds] = useState(new Set())
   const [currentUserId, setCurrentUserId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -16,6 +17,7 @@ export default function Browse() {
   useEffect(() => {
     fetchCurrentUser()
     fetchSavedComics()
+    fetchLikedComics()
     fetchComics()
   }, [search, tags])
 
@@ -50,6 +52,23 @@ export default function Browse() {
       }
     } catch (err) {
       console.error("Failed to fetch saved comics:", err)
+    }
+  }
+
+  const fetchLikedComics = async () => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/users/me/liked`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setLikedComicIds(new Set(data.comic_ids))
+      }
+    } catch (err) {
+      console.error("Failed to fetch liked comics:", err)
     }
   }
 
@@ -116,6 +135,17 @@ export default function Browse() {
           }
           return newSet
         })
+        
+        // Update save count in comics list
+        setComics(prev => prev.map(comic => {
+          if (comic._id === comicId) {
+            return {
+              ...comic,
+              save_count: isSaved ? (comic.save_count || 0) - 1 : (comic.save_count || 0) + 1
+            }
+          }
+          return comic
+        }))
       } else {
         console.error("Failed to save comic, status:", res.status)
         const errorText = await res.text()
@@ -123,6 +153,49 @@ export default function Browse() {
       }
     } catch (err) {
       console.error("Failed to save comic:", err)
+    }
+  }
+
+  const handleLike = async (comicId) => {
+    const token = localStorage.getItem("token")
+    if (!token) {
+      navigate("/login")
+      return
+    }
+
+    try {
+      const isLiked = likedComicIds.has(comicId)
+      const method = isLiked ? "DELETE" : "POST"
+      
+      const res = await fetch(`${API_BASE_URL}/api/comics/${comicId}/like`, {
+        method,
+        headers: { "Authorization": `Bearer ${token}` }
+      })
+
+      if (res.ok) {
+        setLikedComicIds(prev => {
+          const newSet = new Set(prev)
+          if (isLiked) {
+            newSet.delete(comicId)
+          } else {
+            newSet.add(comicId)
+          }
+          return newSet
+        })
+        
+        // Update like count in comics list
+        setComics(prev => prev.map(comic => {
+          if (comic._id === comicId) {
+            return {
+              ...comic,
+              like_count: isLiked ? (comic.like_count || 0) - 1 : (comic.like_count || 0) + 1
+            }
+          }
+          return comic
+        }))
+      }
+    } catch (err) {
+      console.error("Failed to like comic:", err)
     }
   }
 
@@ -206,7 +279,11 @@ export default function Browse() {
                     tags={comic.tags}
                     isOwner={currentUserId === comic.author_id}
                     isSaved={savedComicIds.has(comic._id)}
+                    isLiked={likedComicIds.has(comic._id)}
+                    likeCount={comic.like_count || 0}
+                    saveCount={comic.save_count || 0}
                     onSave={handleSave}
+                    onLike={handleLike}
                     onDelete={handleDelete}
                     onEdit={handleEdit}
                     onClick={() => navigate(`/comic/${comic._id}`)}

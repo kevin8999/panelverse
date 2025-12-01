@@ -10,12 +10,17 @@ export default function ComicCard({
   onClick,
   isOwner = false,
   isSaved = false,
+  isLiked = false,
+  likeCount = 0,
+  saveCount = 0,
   onDelete,
   onEdit,
   onSave,
+  onLike,
   showActions = true
 }) {
   const [saving, setSaving] = useState(false)
+  const [liking, setLiking] = useState(false)
   
   const handleSave = async (e) => {
     e.stopPropagation()
@@ -26,6 +31,18 @@ export default function ComicCard({
       await onSave(id)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleLike = async (e) => {
+    e.stopPropagation()
+    if (liking || !onLike) return
+    
+    setLiking(true)
+    try {
+      await onLike(id)
+    } finally {
+      setLiking(false)
     }
   }
   
@@ -87,6 +104,23 @@ export default function ComicCard({
         {description && (
           <p className="text-sm text-slate-400 line-clamp-2">{description}</p>
         )}
+        
+        {/* Engagement stats */}
+        <div className="flex items-center gap-3 pt-1 text-xs text-slate-400">
+          <span className="flex items-center gap-1">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+            </svg>
+            {likeCount}
+          </span>
+          <span className="flex items-center gap-1">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+            </svg>
+            {saveCount}
+          </span>
+        </div>
+        
         {tags && tags.length > 0 && (
           <div className="flex flex-wrap gap-1 pt-1">
             {tags.slice(0, 3).map((tag, i) => (
@@ -98,9 +132,35 @@ export default function ComicCard({
         )}
 
         <div className="pt-2 space-y-2">
-          <button className="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-700">
-            Read
-          </button>
+          {/* Like button for non-owners */}
+          {showActions && !isOwner && (
+            <div className="flex gap-2">
+              <button 
+                onClick={handleLike}
+                disabled={liking}
+                className={`flex-1 flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                  isLiked
+                    ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+                }`}
+              >
+                <svg className="w-4 h-4" fill={isLiked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                </svg>
+                {isLiked ? 'Liked' : 'Like'}
+              </button>
+              <button className="flex-1 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-700">
+                Read
+              </button>
+            </div>
+          )}
+          
+          {/* Just Read button for owners */}
+          {(!showActions || isOwner) && (
+            <button className="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-700">
+              Read
+            </button>
+          )}
           
           {/* Edit/Delete buttons for owner */}
           {showActions && isOwner && (
