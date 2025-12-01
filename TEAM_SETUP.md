@@ -150,6 +150,17 @@ docker compose logs backend
 
 Ensure `MONGO_URI` and `DB_NAME` are set correctly in docker-compose.yaml.
 
+### Code changes not taking effect
+If you've made changes to the backend code but they're not showing up:
+```bash
+# Force rebuild without cache
+docker compose down backend
+docker compose build --no-cache backend
+docker compose up -d backend
+```
+
+This can happen due to Docker layer caching. The `--no-cache` flag ensures a fresh build.
+
 ---
 
 ## 📚 Additional Documentation
