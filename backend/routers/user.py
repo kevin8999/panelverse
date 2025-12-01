@@ -71,8 +71,14 @@ async def get_my_comics(request: Request, current_user=Depends(get_current_user)
     
     try:
         # Find all comics by this user (including unpublished drafts)
-        # Note: current_user["id"] is an ObjectId, not a string
-        cursor = db.comics.find({"author_id": str(current_user["id"])}).sort("upload_date", -1)
+        # Query for both ObjectId and string author_id to support both formats
+        user_id = current_user["_id"]
+        cursor = db.comics.find({
+            "$or": [
+                {"author_id": user_id},  # ObjectId format
+                {"author_id": str(user_id)}  # String format
+            ]
+        }).sort("upload_date", -1)
         comics = await cursor.to_list(length=None)
         
         # Convert ObjectId to string and add engagement stats
