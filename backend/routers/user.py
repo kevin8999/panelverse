@@ -3,6 +3,20 @@ from typing import Optional
 from bson import ObjectId
 from dependencies import get_current_user
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
+import json
+from datetime import datetime
+
+
+class CustomJSONEncoder(json.JSONEncoder):
+    """Custom JSON encoder that handles ObjectId and datetime objects"""
+    def default(self, obj):
+        if isinstance(obj, ObjectId):
+            return str(obj)
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
+
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -50,6 +64,39 @@ async def get_current_user_info(current_user=Depends(get_current_user)):
         "role": current_user.get("role", "reader")
     }
 
+@router.get("/me/comics")
+async def get_my_comics(request: Request, current_user=Depends(get_current_user)):
+    """Get all comics uploaded by the current user"""
+    db = request.app.mongodb
+    
+    try:
+        # Find all comics by this user (including unpublished drafts)
+        # Note: current_user["id"] is an ObjectId, not a string
+        cursor = db.comics.find({"author_id": str(current_user["id"])}).sort("upload_date", -1)
+        comics = await cursor.to_list(length=None)
+        
+        # Convert ObjectId to string and add engagement stats
+        for comic in comics:
+            comic["_id"] = str(comic["_id"])
+            if "upload_date" in comic:
+                comic["upload_date"] = str(comic["upload_date"])
+            # Add engagement stats
+            comic["like_count"] = len(comic.get("likes", []))
+            comic["save_count"] = len(comic.get("saves", []))
+            # Remove arrays to prevent serialization issues
+            if "likes" in comic:
+                del comic["likes"]
+            if "saves" in comic:
+                del comic["saves"]
+        
+        result = {"comics": comics}
+        
+        # Use JSONResponse with custom encoder to handle ObjectId and datetime
+        json_str = json.dumps(result, cls=CustomJSONEncoder)
+        return JSONResponse(content=json.loads(json_str))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching comics: {str(e)}")
+
 @router.get("/{user_id}", response_model=UserResponse)   
 async def get_user_by_id(user_id: str, request: Request):
     "Finds user in database by id"
@@ -62,4 +109,4 @@ async def get_user_by_id(user_id: str, request: Request):
         return {"id": user["id"], "name": user["name"], "email": user["email"]}
     except Exception as e:
         raise Exception(f"Error retrieving user: {str(e)}")
-    
+

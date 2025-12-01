@@ -12,3 +12,11 @@ __pycache__/
 node_modules/
 dist/
 
+# Media uploads (generated locally, not tracked in Git)
+media/
+uploads/
+
+# Docker volumes (database data is stored in Docker volumes, not Git)
+# Note: Comics and user data will NOT be shared via Git
+# Team members should run ./setup-sample-data.sh after first clone
+

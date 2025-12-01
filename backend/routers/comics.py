@@ -1,7 +1,9 @@
 from fastapi import APIRouter, File, Form, UploadFile, Depends, HTTPException, BackgroundTasks, Request
+from fastapi.responses import JSONResponse
 from typing import List
 import os
 import uuid
+import json
 from pathlib import Path
 from PIL import Image
 from dependencies import get_current_user
@@ -10,10 +12,31 @@ from datetime import datetime, timezone
 from bson import ObjectId
 
 
+class CustomJSONEncoder(json.JSONEncoder):
+    """Custom JSON encoder that handles ObjectId and datetime objects"""
+    def default(self, obj):
+        if isinstance(obj, ObjectId):
+            return str(obj)
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
+
+
 router = APIRouter(prefix="/api", tags=["comics"])
 
 # check upload directory exists
 Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
+
+def add_engagement_stats(comic):
+    """Add like and save counts to comic object"""
+    comic["like_count"] = len(comic.get("likes", []))
+    comic["save_count"] = len(comic.get("saves", []))
+    # Remove the arrays to keep response clean
+    if "likes" in comic:
+        del comic["likes"]
+    if "saves" in comic:
+        del comic["saves"]
+    return comic
 
 def create_thumbnail(file_path: str, thumb_size=(400, 400)):
     """Create thumbnail image in background."""
@@ -38,6 +61,13 @@ async def upload_comic(
     current_user=Depends(get_current_user),
 ):
     """Upload comic files and save metadata to MongoDB database"""
+    # Check if user has artist role
+    if current_user.get("role") not in ["artist", "admin"]:
+        raise HTTPException(
+            status_code=403, 
+            detail="Only artists can upload comics. Please sign up as an artist to upload content."
+        )
+    
     db = request.app.mongodb
     saved_files = []
 
@@ -85,7 +115,9 @@ async def upload_comic(
         "cover_url": cover_url,  # First page as cover
         "uploaded_by": current_user["email"],
         "upload_date": datetime.now(timezone.utc),
-        "published": False
+        "published": True,  # Auto-publish new uploads
+        "likes": [],  # Array of user IDs who liked this comic
+        "saves": []   # Array of user IDs who saved this comic
     }
     result = await db.comics.insert_one(comic_data)
 
@@ -122,6 +154,12 @@ async def list_comics(
     
     # build query filter - show all comics from all users
     query = {}
+    
+    # By default, only show published comics (unless explicitly specified)
+    if published is None:
+        query["published"] = True
+    else:
+        query["published"] = published
 
     # search in title and description
     if search:
@@ -156,20 +194,35 @@ async def list_comics(
         cursor = db.comics.find(query).sort(sort_field, sort_direction).skip(skip).limit(limit)
         comics = await cursor.to_list(length=limit)
 
+        # Convert ObjectId and datetime to strings for JSON serialization
         for comic in comics:
             comic["_id"] = str(comic["_id"])
             if "upload_date" in comic:
                 comic["upload_date"] = str(comic["upload_date"])
+            
+            # Get engagement stats BEFORE removing the arrays
+            likes = comic.get("likes", [])
+            saves = comic.get("saves", [])
+            comic["like_count"] = len(likes)
+            comic["save_count"] = len(saves)
+            
+            # Remove the arrays to keep response clean (they contain ObjectIds)
+            comic.pop("likes", None)
+            comic.pop("saves", None)
 
         total_count = await db.comics.count_documents(query)
 
-        return {
+        result = {
             "comics": comics,
             "total_count": total_count,
             "limit": limit,
             "skip": skip,
             "has_more": (skip + len(comics)) < total_count
         }
+        
+        # Use JSONResponse with custom encoder to handle ObjectId and datetime
+        json_str = json.dumps(result, cls=CustomJSONEncoder)
+        return JSONResponse(content=json.loads(json_str))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving comics: {str(e)}")
 
@@ -186,6 +239,8 @@ async def get_comic(comic_id: str, request: Request):
         comic["_id"] = str(comic["_id"])
         if "upload_date" in comic:
             comic["upload_date"] = str(comic["upload_date"])
+        
+        add_engagement_stats(comic)
         
         return comic
     except Exception as e:
@@ -374,6 +429,12 @@ async def save_comic(comic_id: str, request: Request, current_user=Depends(get_c
             {"$addToSet": {"saved_comics": ObjectId(comic_id)}}
         )
         
+        # Add user to comic's saves array
+        await database.comics.update_one(
+            {"_id": ObjectId(comic_id)},
+            {"$addToSet": {"saves": current_user["id"]}}
+        )
+        
         return {"message": "Comic saved successfully"}
     except HTTPException:
         raise
@@ -393,9 +454,56 @@ async def unsave_comic(comic_id: str, request: Request, current_user=Depends(get
             {"$pull": {"saved_comics": ObjectId(comic_id)}}
         )
         
+        # Remove user from comic's saves array
+        await database.comics.update_one(
+            {"_id": ObjectId(comic_id)},
+            {"$pull": {"saves": current_user["id"]}}
+        )
+        
         return {"message": "Comic removed from saved"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error removing saved comic: {str(e)}")
+
+
+@router.post("/comics/{comic_id}/like")
+async def like_comic(comic_id: str, request: Request, current_user=Depends(get_current_user)):
+    """Like a comic"""
+    database = request.app.mongodb
+
+    try:
+        # Check if comic exists
+        comic = await database.comics.find_one({"_id": ObjectId(comic_id)})
+        if not comic:
+            raise HTTPException(status_code=404, detail="Comic not found.")
+        
+        # Add user to comic's likes array
+        result = await database.comics.update_one(
+            {"_id": ObjectId(comic_id)},
+            {"$addToSet": {"likes": current_user["id"]}}
+        )
+        
+        return {"message": "Comic liked successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error liking comic: {str(e)}")
+
+
+@router.delete("/comics/{comic_id}/like")
+async def unlike_comic(comic_id: str, request: Request, current_user=Depends(get_current_user)):
+    """Unlike a comic"""
+    database = request.app.mongodb
+
+    try:
+        # Remove user from comic's likes array
+        await database.comics.update_one(
+            {"_id": ObjectId(comic_id)},
+            {"$pull": {"likes": current_user["id"]}}
+        )
+        
+        return {"message": "Comic unliked successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error unliking comic: {str(e)}")
 
 
 @router.get("/users/me/saved")
@@ -420,6 +528,7 @@ async def get_saved_comics(request: Request, current_user=Depends(get_current_us
             comic["_id"] = str(comic["_id"])
             if "upload_date" in comic:
                 comic["upload_date"] = str(comic["upload_date"])
+            add_engagement_stats(comic)
         
         return {
             "comics": comics,
@@ -427,6 +536,28 @@ async def get_saved_comics(request: Request, current_user=Depends(get_current_us
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving saved comics: {str(e)}")
+
+
+@router.get("/users/me/liked")
+async def get_liked_comic_ids(request: Request, current_user=Depends(get_current_user)):
+    """Get IDs of all comics liked by the current user"""
+    database = request.app.mongodb
+
+    try:
+        # Find all comics where user is in the likes array
+        comics = await database.comics.find(
+            {"likes": current_user["id"]},
+            {"_id": 1}  # Only return the _id field
+        ).to_list(length=None)
+        
+        comic_ids = [str(comic["_id"]) for comic in comics]
+        
+        return {
+            "comic_ids": comic_ids,
+            "total_count": len(comic_ids)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving liked comics: {str(e)}")
 
 
 @router.get("/users/me/comics")
@@ -443,6 +574,7 @@ async def get_my_comics(request: Request, current_user=Depends(get_current_user)
             comic["_id"] = str(comic["_id"])
             if "upload_date" in comic:
                 comic["upload_date"] = str(comic["upload_date"])
+            add_engagement_stats(comic)
         
         return {
             "comics": comics,

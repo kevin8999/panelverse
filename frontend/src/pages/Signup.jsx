@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../config";
 import "../App.css";
 
@@ -11,6 +11,7 @@ export default function Signup() {
     formState: { errors },
   } = useForm();
 
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
   const [role, setRole] = useState(""); // "artist" or "reader"
@@ -55,9 +56,8 @@ export default function Signup() {
       }
 
       console.log("Successfully registered!");
-      alert(body.message || "Registration successful!");
-      // you can navigate to /login here if you want
-      // navigate("/login");
+      // Redirect to home page after successful signup
+      navigate("/");
     } catch (err) {
       console.error("Registration failed:", err);
       setServerError("Network error. Please try again.");
@@ -137,7 +137,19 @@ export default function Signup() {
               id="password"
               type="password"
               autoComplete="new-password"
-              {...register("password", { required: "Password is required" })}
+              {...register("password", { 
+                required: "Password is required",
+                minLength: {
+                  value: 8,
+                  message: "Password must be at least 8 characters"
+                },
+                validate: {
+                  hasUpperCase: (value) => /[A-Z]/.test(value) || "Must contain an uppercase letter",
+                  hasLowerCase: (value) => /[a-z]/.test(value) || "Must contain a lowercase letter",
+                  hasNumber: (value) => /[0-9]/.test(value) || "Must contain a number",
+                  hasSpecialChar: (value) => /[!@#$%^&*()_+\-=[\]{}|;:,.<>?]/.test(value) || "Must contain a special character"
+                }
+              })}
               className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
             {errors.password && (
@@ -145,6 +157,9 @@ export default function Signup() {
                 {errors.password.message}
               </p>
             )}
+            <p className="mt-1 text-xs text-slate-500">
+              Must be 8+ characters with uppercase, lowercase, number, and special character (!@#$%^&*...)
+            </p>
           </div>
 
           {/* Role selection */}

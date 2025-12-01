@@ -7,13 +7,16 @@ import ComicCard from "../components/ComicCard"
 export default function Home() {
   const [comics, setComics] = useState([])
   const [savedComicIds, setSavedComicIds] = useState(new Set())
+  const [likedComicIds, setLikedComicIds] = useState(new Set())
   const [currentUserId, setCurrentUserId] = useState(null)
+  const [userRole, setUserRole] = useState(null)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
   useEffect(() => {
     fetchCurrentUser()
     fetchSavedComics()
+    fetchLikedComics()
     fetchFeaturedComics()
   }, [])
 
@@ -28,6 +31,7 @@ export default function Home() {
       if (res.ok) {
         const data = await res.json()
         setCurrentUserId(data.id)
+        setUserRole(data.role)
       }
     } catch (err) {
       console.error("Failed to fetch user:", err)
@@ -49,6 +53,23 @@ export default function Home() {
       }
     } catch (err) {
       console.error("Failed to fetch saved comics:", err)
+    }
+  }
+
+  const fetchLikedComics = async () => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/users/me/liked`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setLikedComicIds(new Set(data.comic_ids))
+      }
+    } catch (err) {
+      console.error("Failed to fetch liked comics:", err)
     }
   }
 
@@ -92,9 +113,63 @@ export default function Home() {
           }
           return newSet
         })
+        
+        // Update save count in comics list
+        setComics(prev => prev.map(comic => {
+          if (comic._id === comicId) {
+            return {
+              ...comic,
+              save_count: isSaved ? (comic.save_count || 0) - 1 : (comic.save_count || 0) + 1
+            }
+          }
+          return comic
+        }))
       }
     } catch (err) {
       console.error("Failed to save comic:", err)
+    }
+  }
+
+  const handleLike = async (comicId) => {
+    const token = localStorage.getItem("token")
+    if (!token) {
+      navigate("/login")
+      return
+    }
+
+    try {
+      const isLiked = likedComicIds.has(comicId)
+      const method = isLiked ? "DELETE" : "POST"
+      
+      const res = await fetch(`${API_BASE_URL}/api/comics/${comicId}/like`, {
+        method,
+        headers: { "Authorization": `Bearer ${token}` }
+      })
+
+      if (res.ok) {
+        setLikedComicIds(prev => {
+          const newSet = new Set(prev)
+          if (isLiked) {
+            newSet.delete(comicId)
+          } else {
+            newSet.add(comicId)
+          }
+          return newSet
+        })
+        
+        // Update like count in comics list
+        setComics(prev => prev.map(comic => {
+          if (comic._id === comicId) {
+            return {
+              ...comic,
+              like_count: isLiked ? (comic.like_count || 0) - 1 : (comic.like_count || 0) + 1
+            }
+          }
+          return comic
+        }))
+      }
+    } catch (err) {
+      console.error("Failed to like comic:", err)
     }
   }
 
@@ -116,9 +191,12 @@ export default function Home() {
             <a className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100" href="/browse">
               Browse Comics
             </a>
-            <a style={{ color: "white" }}className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700" href="/upload">
-              Upload New Work
-            </a>
+            {/* Only show upload button for artists and admins */}
+            {(userRole === "artist" || userRole === "admin") && (
+              <a style={{ color: "white" }} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700" href="/upload">
+                Upload New Work
+              </a>
+            )}
           </div>
         </div>
       </section>
@@ -155,7 +233,11 @@ export default function Home() {
                 tags={c.tags}
                 isOwner={c.author_id === currentUserId}
                 isSaved={savedComicIds.has(c._id)}
+                isLiked={likedComicIds.has(c._id)}
+                likeCount={c.like_count || 0}
+                saveCount={c.save_count || 0}
                 onSave={handleSave}
+                onLike={handleLike}
                 onClick={() => navigate(`/comic/${c._id}`)}
               />
             ))}
