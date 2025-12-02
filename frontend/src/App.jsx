@@ -8,6 +8,7 @@ import Profile from "./pages/Profile";
 import Signup from "./pages/Signup";
 import ComicReader from "./pages/ComicReader";
 import EditComic from "./pages/EditComic";
+import UserHome from "./pages/UserHome";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="login" element={<Login />} />
         <Route path="signup" element={<Signup />} />
         <Route path="comic/:id" element={<ComicReader />} />
+        <Route path="user-home" element={<UserHome />} />
         <Route path="*" element={<h1>404 - Page Not Found</h1>} />
       </Route>
     </Routes>
@@ -28,3 +30,4 @@ function App() {
 }
 
 export default App;
+
