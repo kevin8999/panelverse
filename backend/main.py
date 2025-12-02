@@ -30,8 +30,12 @@ app.add_middleware(
 # Create upload directory
 Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
 
-# Serve media files - mount at /media and serve from media/ directory
-app.mount("/media", StaticFiles(directory="media"), name="media")
+# Serve media files - mount at /media and serve from directory containing UPLOAD_DIR
+# Use the configured UPLOAD_DIR (eg. "media/uploads") and mount its parent (eg. "media").
+# Resolve it relative to the current working directory to avoid mismatches when the
+# process is started from a different CWD.
+media_dir = (Path.cwd() / UPLOAD_DIR).parent
+app.mount("/media", StaticFiles(directory=str(media_dir)), name="media")
 
 # Include routers
 app.include_router(auth.router)

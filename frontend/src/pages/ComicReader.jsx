@@ -9,10 +9,25 @@ export default function ComicReader() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [currentPage, setCurrentPage] = useState(0)
+  const [currentUserId, setCurrentUserId] = useState(null)
 
   useEffect(() => {
     fetchComic()
   }, [id])
+
+  useEffect(() => {
+    // fetch current user id for ownership checks
+    const token = localStorage.getItem("token")
+    if (!token) return
+    fetch(`${API_BASE_URL}/api/users/me`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then((res) => {
+      if (!res.ok) return
+      return res.json()
+    }).then((data) => {
+      if (data && data.id) setCurrentUserId(String(data.id))
+    }).catch(() => {})
+  }, [])
 
   const fetchComic = async () => {
     try {
@@ -76,6 +91,15 @@ export default function ComicReader() {
             >
               ← Back to Browse
             </button>
+            {/* Edit button for owner */}
+            {currentUserId && comic?.author_id && String(comic.author_id) === String(currentUserId) && (
+              <button
+                onClick={() => navigate(`/edit/${id}`)}
+                className="ml-3 inline-flex items-center gap-2 px-3 py-1 rounded bg-indigo-600 text-white text-sm hover:bg-indigo-500"
+              >
+                Edit
+              </button>
+            )}
             <h1 className="text-2xl font-bold mt-1">{comic.title}</h1>
             {comic.description && (
               <p className="text-slate-400 text-sm mt-1">{comic.description}</p>
