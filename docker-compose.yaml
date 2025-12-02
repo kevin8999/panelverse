@@ -10,7 +10,9 @@ services:
     volumes:
       # Volume mount commented out - rebuild Docker image when making code changes
       # - ./backend:/app
-      - ./uploads:/app/uploads
+      # Ensure the host 'media' folder is mounted into the container at /app/media
+      # so that UPLOAD_DIR = "media/uploads" inside the app maps to host ./media/uploads
+      - ./media:/app/media
     ports:
       - "8000:8000"
     environment:

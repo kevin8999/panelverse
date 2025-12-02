@@ -197,6 +197,9 @@ async def list_comics(
         # Convert ObjectId and datetime to strings for JSON serialization
         for comic in comics:
             comic["_id"] = str(comic["_id"])
+            # Normalize author_id to string for client-side ownership checks
+            if "author_id" in comic:
+                comic["author_id"] = str(comic["author_id"])
             if "upload_date" in comic:
                 comic["upload_date"] = str(comic["upload_date"])
             
@@ -237,12 +240,16 @@ async def get_comic(comic_id: str, request: Request):
         
         # Convert ObjectId and datetime to strings
         comic["_id"] = str(comic["_id"])
+        # Normalize author_id to string so frontend can compare against current user id
+        if "author_id" in comic:
+            comic["author_id"] = str(comic["author_id"])
         if "upload_date" in comic:
             comic["upload_date"] = str(comic["upload_date"])
         
         add_engagement_stats(comic)
-        
-        return comic
+        # Ensure all BSON types (ObjectId, datetime) are serialized correctly
+        json_str = json.dumps(comic, cls=CustomJSONEncoder)
+        return JSONResponse(content=json.loads(json_str))
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid comic ID: {e}")
 
@@ -257,7 +264,8 @@ async def delete_comic(comic_id: str, request: Request, current_user=Depends(get
         if not comic:
             raise HTTPException(status_code=404, detail="Comic not found.")
         
-        if comic["author_id"] != current_user["id"]:
+        # Compare author IDs as strings to handle ObjectId/int/string variants
+        if str(comic.get("author_id")) != str(current_user.get("id")):
             raise HTTPException(status_code=403, detail="Not authorized to delete this comic.")
         
         await database.comics.delete_one({"_id": ObjectId(comic_id)})
@@ -307,7 +315,8 @@ async def update_comic_tags(
         if not comic:
             raise HTTPException(status_code=404, detail="Comic not found.")
         
-        if comic["author_id"] != current_user["id"]:
+        # Compare author IDs as strings to handle ObjectId/int/string variants
+        if str(comic.get("author_id")) != str(current_user.get("id")):
             raise HTTPException(status_code=403, detail="Not authorized to update this comic.")
         
         # Parse and update tags
@@ -345,7 +354,8 @@ async def update_comic(
         if not comic:
             raise HTTPException(status_code=404, detail="Comic not found.")
         
-        if comic["author_id"] != current_user["id"]:
+        # Compare author IDs as strings to handle ObjectId/int/string variants
+        if str(comic.get("author_id")) != str(current_user.get("id")):
             raise HTTPException(status_code=403, detail="Not authorized to update this comic.")
         
         update_data = {}
