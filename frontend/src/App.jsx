@@ -23,6 +23,7 @@ function App() {
         <Route path="signup" element={<Signup />} />
         <Route path="comic/:id" element={<ComicReader />} />
         <Route path="user-home" element={<UserHome />} />
+        <Route path="artist/:id" element={<ArtistPage />} />
         <Route path="*" element={<h1>404 - Page Not Found</h1>} />
       </Route>
     </Routes>

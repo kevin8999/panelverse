@@ -1,5 +1,6 @@
 import { API_BASE_URL } from "../config"
 import { useState } from "react"
+import { Link } from "react-router-dom"
 
 export default function ComicCard({ 
   id, 
@@ -7,6 +8,8 @@ export default function ComicCard({
   description, 
   coverUrl, 
   tags, 
+  creatorName,
+  creatorId,
   onClick,
   isOwner = false,
   isSaved = false,
@@ -25,7 +28,6 @@ export default function ComicCard({
   const handleSave = async (e) => {
     e.stopPropagation()
     if (saving || !onSave) return
-    
     setSaving(true)
     try {
       await onSave(id)
@@ -37,7 +39,6 @@ export default function ComicCard({
   const handleLike = async (e) => {
     e.stopPropagation()
     if (liking || !onLike) return
-    
     setLiking(true)
     try {
       await onLike(id)
@@ -63,7 +64,6 @@ export default function ComicCard({
       className="group overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg cursor-pointer relative"
       onClick={onClick}
     >
-      {/* Save button (top right) */}
       {showActions && !isOwner && (
         <button
           onClick={handleSave}
@@ -81,7 +81,6 @@ export default function ComicCard({
         </button>
       )}
 
-      {/* cover */}
       <div className="relative aspect-[3/4] w-full bg-gradient-to-br from-slate-800 to-slate-900">
         {coverUrl ? (
           <img 
@@ -96,16 +95,28 @@ export default function ComicCard({
         )}
       </div>
 
-      {/* meta */}
       <div className="space-y-1.5 p-4">
         <h3 className="line-clamp-1 text-base font-semibold text-slate-100 group-hover:text-indigo-400">
           {title}
         </h3>
+
+        {creatorName && creatorId && (
+          <p className="text-sm text-slate-400">
+            by{" "}
+            <Link
+              to={`/artist/${creatorId}`}
+              className="text-indigo-400 hover:text-indigo-300 underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {creatorName}
+            </Link>
+          </p>
+        )}
+
         {description && (
           <p className="text-sm text-slate-400 line-clamp-2">{description}</p>
         )}
         
-        {/* Engagement stats */}
         <div className="flex items-center gap-3 pt-1 text-xs text-slate-400">
           <span className="flex items-center gap-1">
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -132,7 +143,6 @@ export default function ComicCard({
         )}
 
         <div className="pt-2 space-y-2">
-          {/* Like button for non-owners */}
           {showActions && !isOwner && (
             <div className="flex gap-2">
               <button 
@@ -154,15 +164,13 @@ export default function ComicCard({
               </button>
             </div>
           )}
-          
-          {/* Just Read button for owners */}
+
           {(!showActions || isOwner) && (
             <button className="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-700">
               Read
             </button>
           )}
           
-          {/* Edit/Delete buttons for owner */}
           {showActions && isOwner && (
             <div className="flex gap-2">
               <button 
